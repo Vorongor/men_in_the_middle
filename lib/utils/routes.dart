@@ -1,4 +1,5 @@
 class Routes {
   static const home = '/';
-  static const game = '/game';
+  static const login = '/login';
+  static const dashboard = '/dashboard';
 }
