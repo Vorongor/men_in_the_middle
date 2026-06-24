@@ -1,0 +1,68 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../utils/routes.dart';
+import '../utils/constants.dart';
+
+class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              AppStrings.gameTitle,
+              style: GoogleFonts.cinzel(
+                fontSize: 42,
+                color: AppColors.primary,
+                letterSpacing: 3,
+              ),
+            ),
+            const SizedBox(height: 64),
+            _MenuButton(
+              label: 'Start',
+              onTap: () => Navigator.pushNamed(context, Routes.game),
+            ),
+            const SizedBox(height: 20),
+            _MenuButton(
+              label: 'Exit',
+              onTap: () => SystemNavigator.pop(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MenuButton extends StatelessWidget {
+  const _MenuButton({required this.label, required this.onTap});
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 220,
+      height: 52,
+      child: OutlinedButton(
+        onPressed: onTap,
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.primary,
+          side: const BorderSide(color: AppColors.primary, width: 1.5),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(fontSize: 20, letterSpacing: 2),
+        ),
+      ),
+    );
+  }
+}
