@@ -21,10 +21,14 @@ dependencies:
   # Persistence / DB
   shared_preferences: ^2.5.3
   sqflite: ^2.4.2
+  sqflite_common_ffi: ^2.3.4
   path: ^1.9.1
 
   # Crypto
   crypto: ^3.0.7
+
+  # Video
+  video_player: ^2.9.5
 
 dev_dependencies:
   flutter_test:
@@ -37,6 +41,7 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/media/
     - assets/images/backgrounds/
     - assets/images/characters/
     - assets/images/ui/

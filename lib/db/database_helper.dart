@@ -1,4 +1,5 @@
-import 'package:sqflite/sqflite.dart';
+import 'dart:io';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:path/path.dart';
 import '../models/account.dart';
 
@@ -14,6 +15,10 @@ class DatabaseHelper {
   }
 
   Future<Database> _initDb() async {
+    if (Platform.isWindows || Platform.isLinux) {
+      sqfliteFfiInit();
+      databaseFactory = databaseFactoryFfi;
+    }
     final dbPath = await getDatabasesPath();
     return openDatabase(
       join(dbPath, 'middlemen.db'),

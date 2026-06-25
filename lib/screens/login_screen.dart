@@ -5,6 +5,7 @@ import '../db/database_helper.dart';
 import '../services/audio_service.dart';
 import '../utils/constants.dart';
 import '../utils/routes.dart';
+import '../widgets/video_bg.dart';
 
 String _hashPassword(String raw) => sha256.convert(utf8.encode(raw)).toString();
 
@@ -49,6 +50,8 @@ class _LoginScreenState extends State<LoginScreen> {
       } else {
         _showError(AppErrors.wrongCredentials);
       }
+    } catch (_) {
+      if (mounted) _showError(AppErrors.dbFail);
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -76,7 +79,7 @@ class _LoginScreenState extends State<LoginScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          Image.asset(AppImages.loginBg, fit: BoxFit.cover),
+          VideoBg(fallback: AppImages.loginBg),
           const ColoredBox(color: Color(0xAA000000)),
           Center(
             child: SingleChildScrollView(

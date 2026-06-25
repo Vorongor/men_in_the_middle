@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../utils/constants.dart';
 import '../utils/routes.dart';
+import '../widgets/video_bg.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -13,7 +14,7 @@ class HomeScreen extends StatelessWidget {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          Image.asset(AppImages.homeBg, fit: BoxFit.cover),
+          VideoBg(fallback: AppImages.homeBg),
           const ColoredBox(color: Color(0x88000000)),
           Center(
             child: Column(
