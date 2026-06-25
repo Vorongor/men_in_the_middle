@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/dashboard_screen.dart';
+import 'screens/settings_screen.dart';
 import 'utils/routes.dart';
 
 class App extends StatelessWidget {
@@ -18,6 +19,7 @@ class App extends StatelessWidget {
         Routes.home: (_) => const HomeScreen(),
         Routes.login: (_) => const LoginScreen(),
         Routes.dashboard: (_) => const DashboardScreen(),
+        Routes.settings: (_) => const SettingsScreen(),
       },
     );
   }

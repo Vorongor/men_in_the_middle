@@ -28,8 +28,10 @@ dependencies:
   # Crypto
   crypto: ^3.0.7
 
-  # Video
-  video_player: ^2.9.5
+  # Video (cross-platform incl. Windows)
+  media_kit: ^1.1.10
+  media_kit_video: ^1.2.4
+  media_kit_libs_windows_video: ^1.0.9
 
 dev_dependencies:
   flutter_test:

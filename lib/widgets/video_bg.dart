@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:video_player/video_player.dart';
+import 'package:media_kit/media_kit.dart';
+import 'package:media_kit_video/media_kit_video.dart';
 
 class VideoBg extends StatefulWidget {
   const VideoBg({super.key, required this.fallback});
@@ -11,20 +12,21 @@ class VideoBg extends StatefulWidget {
 }
 
 class _VideoBgState extends State<VideoBg> {
-  late final VideoPlayerController _ctrl;
+  late final Player _player;
+  late final VideoController _controller;
   bool _ready = false;
   bool _failed = false;
 
   @override
   void initState() {
     super.initState();
-    _ctrl = VideoPlayerController.asset('assets/media/matrix_bg.mp4');
-    _ctrl
-        .initialize()
-        .then((_) {
-          _ctrl.setLooping(true);
-          _ctrl.setVolume(0);
-          _ctrl.play();
+    _player = Player();
+    _controller = VideoController(_player);
+    _player
+        .open(Media('asset:///assets/media/matrix_bg.mp4'))
+        .then((_) async {
+          await _player.setPlaylistMode(PlaylistMode.loop);
+          await _player.setVolume(0);
           if (mounted) setState(() => _ready = true);
         })
         .catchError((_) {
@@ -34,7 +36,7 @@ class _VideoBgState extends State<VideoBg> {
 
   @override
   void dispose() {
-    _ctrl.dispose();
+    _player.dispose();
     super.dispose();
   }
 
@@ -43,13 +45,10 @@ class _VideoBgState extends State<VideoBg> {
     if (_failed || !_ready) {
       return Image.asset(widget.fallback, fit: BoxFit.cover);
     }
-    return FittedBox(
+    return Video(
+      controller: _controller,
       fit: BoxFit.cover,
-      child: SizedBox(
-        width: _ctrl.value.size.width,
-        height: _ctrl.value.size.height,
-        child: VideoPlayer(_ctrl),
-      ),
+      controls: NoVideoControls,
     );
   }
 }

@@ -34,7 +34,10 @@ class HomeScreen extends StatelessWidget {
                   onTap: () => Navigator.pushNamed(context, Routes.login),
                 ),
                 const SizedBox(height: 20),
-                _MenuButton(label: 'Settings', onTap: null),
+                _MenuButton(
+                  label: 'Settings',
+                  onTap: () => Navigator.pushNamed(context, Routes.settings),
+                ),
                 const SizedBox(height: 20),
                 _MenuButton(
                   label: 'Exit',
