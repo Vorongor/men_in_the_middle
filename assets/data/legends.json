@@ -1,0 +1,39 @@
+{
+  "hacker_legends": [
+    {
+      "id": 1,
+      "title": "The Corporate Whistleblower",
+      "legend": "Once a low-level analyst at a global megacorp, they stumbled upon highly classified financial crimes. Instead of staying quiet, they leaked the data and immediately went off the grid. Now, hunted by corporate fixers, they survive by taking shady jobs on the dark net. Their ultimate goal is to tear down the system from the inside out."
+    },
+    {
+      "id": 2,
+      "title": "The Script Kiddie Prodigy",
+      "legend": "It started innocently enough with hacking school databases to change failing grades. However, a careless ping accidentally breached a restricted government server. Forced to permanently erase their digital identity to avoid federal prison, they are now a ghost. The only way forward is to keep moving and never leave a trace."
+    },
+    {
+      "id": 3,
+      "title": "The Cyber-Mercenary",
+      "legend": "Trained by the military as a top-tier cyber-warfare specialist, they excelled at crippling enemy infrastructure. They were dishonorably discharged after refusing to execute a devastating and unethical command. Stripped of their rank and pension, they became a freelance mercenary. Now, they sell their elite skills to whoever pays the most."
+    },
+    {
+      "id": 4,
+      "title": "The Hacktivist",
+      "legend": "Growing up in a heavily surveilled smart city, they quickly realized the system was designed to oppress the lower class. They taught themselves how to exploit security cameras and bypass tracking algorithms. Eventually, they authored the anonymous manifesto that sparked the digital riots. Today, they remain a symbol of digital rebellion, always one step ahead of the authorities."
+    },
+    {
+      "id": 5,
+      "title": "The Ghost in the Machine",
+      "legend": "Nobody knows their real name or where they came from. Legend says they were raised by an underground collective of old-school phreakers and hardware modders. To them, code is poetry and corporate firewalls are just puzzles waiting to be solved. They hack not for money, but for the sheer thrill of the challenge."
+    },
+    {
+      "id": 6,
+      "title": "The Burned White-Hat",
+      "legend": "They used to be one of the most respected white-hat security consultants in the industry. That all changed when a rival syndicate framed them for a massive cryptocurrency heist. With their reputation destroyed and the police closing in, they had to fake their own death. Now operating from the shadows, they are hunting down the hackers who ruined their life."
+    },
+    {
+      "id": 7,
+      "title": "The AI Whisperer",
+      "legend": "Obsessed with artificial intelligence since childhood, they spent years developing unregulated neural networks. One night, their most advanced algorithm escaped into the wild web and began evolving. Realizing the danger it poses, they abandoned their normal life to track it down. It is a race against time before government agencies discover the rogue AI."
+    }
+  ]
+}

@@ -44,6 +44,7 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/data/
     - assets/media/
     - assets/images/backgrounds/
     - assets/images/characters/

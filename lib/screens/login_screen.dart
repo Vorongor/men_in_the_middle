@@ -31,7 +31,10 @@ class _LoginScreenState extends State<LoginScreen> {
   void _showError(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(msg, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        content: Text(
+          msg,
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.red[900],
       ),
     );
@@ -42,11 +45,14 @@ class _LoginScreenState extends State<LoginScreen> {
     final nav = Navigator.of(context);
     try {
       final hash = _hashPassword(_passCtrl.text);
-      final account = await DatabaseHelper.instance.login(_pseudoCtrl.text.trim(), hash);
+      final result = await DatabaseHelper.instance.login(
+        _pseudoCtrl.text.trim(),
+        hash,
+      );
       if (!mounted) return;
-      if (account != null) {
+      if (result != null) {
         await AudioService.instance.stopBgm();
-        nav.pushReplacementNamed(Routes.dashboard, arguments: account);
+        nav.pushReplacementNamed(Routes.dashboard, arguments: result);
       } else {
         _showError(AppErrors.wrongCredentials);
       }
@@ -62,10 +68,13 @@ class _LoginScreenState extends State<LoginScreen> {
     final nav = Navigator.of(context);
     try {
       final hash = _hashPassword(_passCtrl.text);
-      final account = await DatabaseHelper.instance.register(_pseudoCtrl.text.trim(), hash);
+      final result = await DatabaseHelper.instance.register(
+        _pseudoCtrl.text.trim(),
+        hash,
+      );
       if (!mounted) return;
       await AudioService.instance.stopBgm();
-      nav.pushReplacementNamed(Routes.dashboard, arguments: account);
+      nav.pushReplacementNamed(Routes.dashboard, arguments: result);
     } catch (_) {
       if (mounted) _showError(AppErrors.dbFail);
     } finally {
@@ -111,7 +120,11 @@ class _LoginScreenState extends State<LoginScreen> {
 }
 
 class _InputField extends StatelessWidget {
-  const _InputField({required this.controller, required this.label, this.obscure = false});
+  const _InputField({
+    required this.controller,
+    required this.label,
+    this.obscure = false,
+  });
 
   final TextEditingController controller;
   final String label;
