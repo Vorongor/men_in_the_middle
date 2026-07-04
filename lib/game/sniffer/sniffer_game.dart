@@ -84,11 +84,9 @@ class SnifferGame extends FlameGame with HasCollisionDetection, KeyboardEvents {
     _refreshHud();
   }
 
-  @override
-  void onGameResize(Vector2 size) {
-    super.onGameResize(size);
-    paddle.setBounds(size.x);
-  }
+  // onGameResize is intentionally not overridden here.
+  // SnifferPaddle.onGameResize handles its own bounds update after mount,
+  // which structurally eliminates the LateInitializationError race.
 
   void _refreshHud() {
     _timerText.text = 'TIME  ${timeRemaining.ceil()}s';
@@ -174,7 +172,12 @@ class SnifferGame extends FlameGame with HasCollisionDetection, KeyboardEvents {
   /// Forwarded from a [GestureDetector] wrapping the [GameWidget] — Flame's
   /// own drag-callback plumbing adds a dispatcher indirection that isn't
   /// worth it for "drag anywhere moves the paddle".
-  void dragPaddleBy(double dx) => paddle.moveBy(dx);
+  ///
+  /// No-op if [onLoad] hasn't finished yet (paddle is not initialised).
+  void dragPaddleBy(double dx) {
+    if (!isLoaded) return;
+    paddle.moveBy(dx);
+  }
 
   @override
   KeyEventResult onKeyEvent(KeyEvent event, Set<LogicalKeyboardKey> keysPressed) {

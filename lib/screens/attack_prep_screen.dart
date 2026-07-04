@@ -190,27 +190,11 @@ class _AttackPrepScreenState extends ConsumerState<AttackPrepScreen> {
               'Est. Time Budget',
               '${ResolutionEngine.timeBudgetSeconds(setup)}s',
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              child: Row(
-                children: [
-                  const SizedBox(
-                    width: 140,
-                    child: Text(
-                      'Damage Mult.',
-                      style: TextStyle(color: Colors.white38, fontSize: 13),
-                    ),
-                  ),
-                  Text(
-                    '×${setup.damageMult.toStringAsFixed(1)}',
-                    style: TextStyle(
-                      color: _multColor(setup.damageMult),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
+            _PrepRow(
+              'Damage Mult.',
+              '\u00d7${setup.damageMult.toStringAsFixed(1)}',
+              valueColor: _multColor(setup.damageMult),
+              valueBold: true,
             ),
           ],
           if (underpowered) ...[
@@ -324,9 +308,16 @@ class _AttackPrepScreenState extends ConsumerState<AttackPrepScreen> {
 }
 
 class _PrepRow extends StatelessWidget {
-  const _PrepRow(this.label, this.value);
+  const _PrepRow(
+    this.label,
+    this.value, {
+    this.valueColor,
+    this.valueBold = false,
+  });
   final String label;
   final String value;
+  final Color? valueColor;
+  final bool valueBold;
 
   @override
   Widget build(BuildContext context) {
@@ -334,16 +325,32 @@ class _PrepRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
-          SizedBox(
-            width: 140,
-            child: Text(
-              label,
-              style: const TextStyle(color: Colors.white38, fontSize: 13),
+          // Label: Flexible so it can shrink on very narrow windows instead
+          // of hard-overflowing.
+          Flexible(
+            flex: 0,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minWidth: 100, maxWidth: 140),
+              child: Text(
+                label,
+                style: const TextStyle(color: Colors.white38, fontSize: 13),
+              ),
             ),
           ),
-          Text(
-            value,
-            style: const TextStyle(color: Colors.white, fontSize: 13),
+          // Value: Expanded so it takes the remaining space and clips with
+          // ellipsis instead of overflowing the Row.
+          Expanded(
+            child: Text(
+              value,
+              softWrap: false,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: valueColor ?? Colors.white,
+                fontSize: 13,
+                fontWeight:
+                    valueBold ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
           ),
         ],
       ),

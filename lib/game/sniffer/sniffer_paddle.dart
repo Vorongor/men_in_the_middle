@@ -26,6 +26,15 @@ class SnifferPaddle extends RectangleComponent with CollisionCallbacks {
     add(RectangleHitbox()..collisionType = CollisionType.active);
   }
 
+  /// Flame guarantees this is only called after the component is mounted,
+  /// so no race condition with [onLoad]. The game-level [onGameResize] no
+  /// longer needs to touch the paddle at all.
+  @override
+  void onGameResize(Vector2 gameSize) {
+    super.onGameResize(gameSize);
+    setBounds(gameSize.x);
+  }
+
   /// Called whenever the playable area width is known/changes so drags and
   /// keyboard movement can't push the paddle off-screen.
   void setBounds(double screenWidth) {
