@@ -1,0 +1,254 @@
+[
+  {
+    "id": 1,
+    "name": "Phishing Mailer v1",
+    "soft_type_id": 1,
+    "description": "Standard phishing mail dispatcher. Good for simple target email operations.",
+    "base_price": 100,
+    "currency_type": "EPTS",
+    "req_level": 1,
+    "req_black_trust": 0,
+    "init_max_level": 5,
+    "base_attack": 10,
+    "base_penetration": 5,
+    "base_trace": 2,
+    "sockets": 1,
+    "level_up_strategy": {
+      "2": {"attack": 5, "penetration": 2, "cost": 100},
+      "3": {"attack": 5, "penetration": 3, "cost": 150},
+      "4": {"attack": 8, "penetration": 4, "cost": 220},
+      "5": {"attack": 10, "penetration": 5, "cost": 300}
+    }
+  },
+  {
+    "id": 2,
+    "name": "Cookie Stealer Pro",
+    "soft_type_id": 1,
+    "description": "Hijacks active browser sessions using malicious cookies. Sneaky entry.",
+    "base_price": 300,
+    "currency_type": "EPTS",
+    "req_level": 2,
+    "req_black_trust": 10,
+    "init_max_level": 5,
+    "base_attack": 25,
+    "base_penetration": 15,
+    "base_trace": 5,
+    "sockets": 1,
+    "level_up_strategy": {
+      "2": {"attack": 10, "penetration": 5, "cost": 250},
+      "3": {"attack": 10, "penetration": 5, "cost": 350},
+      "4": {"attack": 15, "penetration": 8, "cost": 500},
+      "5": {"attack": 20, "penetration": 10, "cost": 700}
+    }
+  },
+  {
+    "id": 3,
+    "name": "Social Engineer Campaign",
+    "soft_type_id": 1,
+    "description": "Multi-vector campaign targeting human vulnerabilities at scale.",
+    "base_price": 750,
+    "currency_type": "EPTS",
+    "req_level": 4,
+    "req_black_trust": 30,
+    "init_max_level": 5,
+    "base_attack": 60,
+    "base_penetration": 40,
+    "base_trace": 10,
+    "sockets": 2,
+    "level_up_strategy": {
+      "2": {"attack": 20, "penetration": 15, "cost": 600},
+      "3": {"attack": 25, "penetration": 15, "cost": 900},
+      "4": {"attack": 30, "penetration": 20, "cost": 1200},
+      "5": {"attack": 40, "penetration": 25, "cost": 1800}
+    }
+  },
+  {
+    "id": 4,
+    "name": "Brute Force Lite",
+    "soft_type_id": 2,
+    "description": "Entry-level password generator dictionary attack tool.",
+    "base_price": 150,
+    "currency_type": "EPTS",
+    "req_level": 1,
+    "req_black_trust": 0,
+    "init_max_level": 5,
+    "base_attack": 12,
+    "base_penetration": 8,
+    "base_trace": 3,
+    "sockets": 1,
+    "level_up_strategy": {
+      "2": {"attack": 6, "penetration": 4, "cost": 120},
+      "3": {"attack": 6, "penetration": 4, "cost": 180},
+      "4": {"attack": 10, "penetration": 6, "cost": 250},
+      "5": {"attack": 12, "penetration": 8, "cost": 350}
+    }
+  },
+  {
+    "id": 5,
+    "name": "Hydra Decryptor",
+    "soft_type_id": 2,
+    "description": "Multi-protocol parallel login cracker. High speed cracking.",
+    "base_price": 450,
+    "currency_type": "EPTS",
+    "req_level": 3,
+    "req_black_trust": 15,
+    "init_max_level": 5,
+    "base_attack": 30,
+    "base_penetration": 20,
+    "base_trace": 6,
+    "sockets": 1,
+    "level_up_strategy": {
+      "2": {"attack": 12, "penetration": 8, "cost": 350},
+      "3": {"attack": 12, "penetration": 8, "cost": 500},
+      "4": {"attack": 18, "penetration": 12, "cost": 700},
+      "5": {"attack": 25, "penetration": 15, "cost": 950}
+    }
+  },
+  {
+    "id": 6,
+    "name": "Rainbow Tables Master",
+    "soft_type_id": 2,
+    "description": "Precomputed table lookups for instant hash resolution.",
+    "base_price": 900,
+    "currency_type": "EPTS",
+    "req_level": 5,
+    "req_black_trust": 40,
+    "init_max_level": 5,
+    "base_attack": 75,
+    "base_penetration": 50,
+    "base_trace": 12,
+    "sockets": 2,
+    "level_up_strategy": {
+      "2": {"attack": 25, "penetration": 15, "cost": 800},
+      "3": {"attack": 30, "penetration": 20, "cost": 1100},
+      "4": {"attack": 35, "penetration": 25, "cost": 1500},
+      "5": {"attack": 45, "penetration": 30, "cost": 2100}
+    }
+  },
+  {
+    "id": 7,
+    "name": "Botnet Router Lite",
+    "soft_type_id": 3,
+    "description": "Commands a small network of infected IoT devices for simple DDoS.",
+    "base_price": 200,
+    "currency_type": "EPTS",
+    "req_level": 1,
+    "req_black_trust": 0,
+    "init_max_level": 5,
+    "base_attack": 15,
+    "base_penetration": 10,
+    "base_trace": 4,
+    "sockets": 1,
+    "level_up_strategy": {
+      "2": {"attack": 8, "penetration": 5, "cost": 150},
+      "3": {"attack": 8, "penetration": 5, "cost": 220},
+      "4": {"attack": 12, "penetration": 8, "cost": 300},
+      "5": {"attack": 15, "penetration": 10, "cost": 450}
+    }
+  },
+  {
+    "id": 8,
+    "name": "DNS Flood Agent",
+    "soft_type_id": 3,
+    "description": "Amplification DDoS attack script using open DNS resolvers.",
+    "base_price": 600,
+    "currency_type": "EPTS",
+    "req_level": 3,
+    "req_black_trust": 20,
+    "init_max_level": 5,
+    "base_attack": 40,
+    "base_penetration": 30,
+    "base_trace": 8,
+    "sockets": 1,
+    "level_up_strategy": {
+      "2": {"attack": 15, "penetration": 10, "cost": 450},
+      "3": {"attack": 18, "penetration": 12, "cost": 650},
+      "4": {"attack": 22, "penetration": 15, "cost": 900},
+      "5": {"attack": 30, "penetration": 20, "cost": 1300}
+    }
+  },
+  {
+    "id": 9,
+    "name": "Syn Flood Master",
+    "soft_type_id": 3,
+    "description": "High performance raw TCP handshake flooding utility.",
+    "base_price": 1100,
+    "currency_type": "EPTS",
+    "req_level": 6,
+    "req_black_trust": 50,
+    "init_max_level": 5,
+    "base_attack": 90,
+    "base_penetration": 60,
+    "base_trace": 16,
+    "sockets": 2,
+    "level_up_strategy": {
+      "2": {"attack": 30, "penetration": 20, "cost": 950},
+      "3": {"attack": 35, "penetration": 25, "cost": 1350},
+      "4": {"attack": 40, "penetration": 30, "cost": 1800},
+      "5": {"attack": 55, "penetration": 40, "cost": 2500}
+    }
+  },
+  {
+    "id": 10,
+    "name": "SQLi Script Injector",
+    "soft_type_id": 4,
+    "description": "Automated SQL injection suite for scanning and database mapping.",
+    "base_price": 250,
+    "currency_type": "EPTS",
+    "req_level": 2,
+    "req_black_trust": 5,
+    "init_max_level": 5,
+    "base_attack": 18,
+    "base_penetration": 12,
+    "base_trace": 5,
+    "sockets": 1,
+    "level_up_strategy": {
+      "2": {"attack": 10, "penetration": 6, "cost": 200},
+      "3": {"attack": 10, "penetration": 6, "cost": 300},
+      "4": {"attack": 15, "penetration": 10, "cost": 420},
+      "5": {"attack": 20, "penetration": 12, "cost": 600}
+    }
+  },
+  {
+    "id": 11,
+    "name": "Zero-Day Injector",
+    "soft_type_id": 4,
+    "description": "Injects custom shellcode using unpatched system vulnerabilities.",
+    "base_price": 700,
+    "currency_type": "EPTS",
+    "req_level": 4,
+    "req_black_trust": 25,
+    "init_max_level": 5,
+    "base_attack": 50,
+    "base_penetration": 35,
+    "base_trace": 10,
+    "sockets": 1,
+    "level_up_strategy": {
+      "2": {"attack": 20, "penetration": 12, "cost": 550},
+      "3": {"attack": 25, "penetration": 15, "cost": 800},
+      "4": {"attack": 30, "penetration": 20, "cost": 1150},
+      "5": {"attack": 40, "penetration": 25, "cost": 1600}
+    }
+  },
+  {
+    "id": 12,
+    "name": "Hex Kernel Exploit",
+    "soft_type_id": 4,
+    "description": "Deep OS ring-0 privilege escalation exploit. Ultimate control.",
+    "base_price": 1500,
+    "currency_type": "EPTS",
+    "req_level": 7,
+    "req_black_trust": 60,
+    "init_max_level": 5,
+    "base_attack": 120,
+    "base_penetration": 80,
+    "base_trace": 20,
+    "sockets": 2,
+    "level_up_strategy": {
+      "2": {"attack": 40, "penetration": 30, "cost": 1300},
+      "3": {"attack": 50, "penetration": 35, "cost": 1800},
+      "4": {"attack": 60, "penetration": 40, "cost": 2400},
+      "5": {"attack": 80, "penetration": 50, "cost": 3200}
+    }
+  }
+]

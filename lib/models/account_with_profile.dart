@@ -1,6 +1,6 @@
 import 'account.dart';
-import 'profile.dart';
 import 'level.dart';
+import 'profile.dart';
 
 class AccountWithProfile {
   final Account account;

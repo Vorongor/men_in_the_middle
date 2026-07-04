@@ -41,7 +41,7 @@ class HomeScreen extends StatelessWidget {
                 const SizedBox(height: 20),
                 _MenuButton(
                   label: 'Exit',
-                  onTap: () => SystemNavigator.pop(),
+                  onTap: SystemNavigator.pop,
                 ),
               ],
             ),
