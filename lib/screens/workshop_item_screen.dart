@@ -1,0 +1,453 @@
+import 'dart:async' show unawaited;
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+import '../models/hardware_item.dart';
+import '../models/software_item.dart';
+import '../models/user_hardware.dart';
+import '../models/user_software.dart';
+import '../repos/inventory_repository.dart';
+import '../services/audio_service.dart';
+import '../state/player_session.dart';
+import '../utils/app_logger.dart';
+import '../utils/async_value_ext.dart';
+import '../utils/constants.dart';
+import '../utils/route_args.dart';
+import '../widgets/game_scaffold.dart';
+
+class WorkshopItemScreen extends ConsumerStatefulWidget {
+  const WorkshopItemScreen({super.key});
+
+  @override
+  ConsumerState<WorkshopItemScreen> createState() => _WorkshopItemScreenState();
+}
+
+class _WorkshopItemScreenState extends ConsumerState<WorkshopItemScreen> {
+  static final _log = AppLogger.of('WorkshopItemScreen');
+
+  bool _isUpgrading = false;
+
+  Future<void> _handleUpgrade(int profileId, String type, int id) async {
+    setState(() => _isUpgrading = true);
+    try {
+      final repo = ref.read(inventoryRepositoryProvider);
+      if (type == 'software') {
+        await repo.upgradeSoftware(profileId, id);
+      } else {
+        await repo.upgradeHardware(profileId, id);
+      }
+
+      // Refresh player session
+      await ref.read(playerSessionProvider.notifier).refresh();
+      unawaited(AudioService.instance.playSfx(AppAudio.sfxUpgrade));
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: const Color(0xFF0C160C),
+            content: Text(
+              'UPGRADE COMPLETED SUCCESSFULLY',
+              style: GoogleFonts.shareTechMono(color: Colors.greenAccent),
+            ),
+          ),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      _log.warning('Upgrade of $type item #$id failed', e);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: const Color(0xFF240C0C),
+            content: Text(
+              'UPGRADE FAILED: $e',
+              style: GoogleFonts.shareTechMono(color: Colors.redAccent),
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isUpgrading = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final args = ModalRoute.of(context)!.settings.arguments as WorkshopItemArgs?;
+    if (args == null) {
+      return const GameScaffold(
+        screenNum: '9.2',
+        screenName: 'WORKSHOP ITEM',
+        body: Center(child: Text('Invalid arguments')),
+      );
+    }
+
+    final profile = ref.watch(playerSessionProvider).valueOrNull?.profile;
+    if (profile == null) {
+      return const GameScaffold(
+        screenNum: '9.2',
+        screenName: 'WORKSHOP ITEM',
+        body: Center(child: Text('Not authenticated')),
+      );
+    }
+
+    final repo = ref.read(inventoryRepositoryProvider);
+
+    return FutureBuilder(
+      future: args.itemType == 'software'
+          ? repo.fetchOwnedSoftware(profile.id!)
+          : repo.fetchOwnedHardware(profile.id!),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const GameScaffold(
+            screenNum: '9.2',
+            screenName: 'WORKSHOP ITEM',
+            body: Center(child: CircularProgressIndicator(color: Colors.green)),
+          );
+        }
+
+        if (args.itemType == 'software') {
+          final list = snapshot.data as List<OwnedSoftware>? ?? <OwnedSoftware>[];
+          final match = list.where((o) => o.userSoftware.id == args.id);
+          if (match.isEmpty) {
+            return const GameScaffold(
+              screenNum: '9.2',
+              screenName: 'WORKSHOP ITEM',
+              body: Center(child: Text('Software item not found in inventory')),
+            );
+          }
+          return _buildSoftwareUpgrade(profile.id!, profile.eptsBalance, match.first);
+        } else {
+          final list = snapshot.data as List<OwnedHardware>? ?? <OwnedHardware>[];
+          final match = list.where((o) => o.userHardware.id == args.id);
+          if (match.isEmpty) {
+            return const GameScaffold(
+              screenNum: '9.2',
+              screenName: 'WORKSHOP ITEM',
+              body: Center(child: Text('Hardware item not found in inventory')),
+            );
+          }
+          return _buildHardwareUpgrade(profile.id!, profile.eptsBalance, match.first);
+        }
+      },
+    );
+  }
+
+  Widget _buildSoftwareUpgrade(int profileId, int balance, OwnedSoftware o) {
+    final us = o.userSoftware;
+    final SoftwareItem cat = o.catalogItem;
+    
+    final currentLvl = us.currentLevel;
+    final maxLvl = cat.initMaxLevel;
+    final isMax = currentLvl >= maxLvl;
+
+    int cost = 0;
+    int attackBonus = 0;
+    int penetrationBonus = 0;
+
+    if (!isMax) {
+      final nextLvl = currentLvl + 1;
+      final step = cat.levelUpStrategy[nextLvl.toString()] as Map<String, dynamic>?;
+      if (step != null) {
+        cost = step['cost'] as int;
+        attackBonus = step['attack'] as int? ?? 0;
+        penetrationBonus = step['penetration'] as int? ?? 0;
+      }
+    }
+
+    final isAffordable = balance >= cost;
+    final canUpgrade = !isMax && isAffordable && !_isUpgrading;
+
+    String buttonText = 'UPGRADE MODULE  ·  $cost EPTS';
+    if (isMax) {
+      buttonText = 'MAXIMUM CAPACITY REACHED';
+    } else if (!isAffordable) {
+      buttonText = 'INSUFFICIENT EPTS BALANCE';
+    } else if (_isUpgrading) {
+      buttonText = 'COMPILING SOURCE CODE...';
+    }
+
+    return GameScaffold(
+      screenNum: '9.2',
+      screenName: 'WORKSHOP SOFTWARE',
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0C160C),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFF1E351E)),
+                  ),
+                  child: const Icon(Icons.terminal, color: Colors.greenAccent, size: 20),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        cat.name,
+                        style: GoogleFonts.shareTechMono(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        'SOFTWARE  ·  LEVEL $currentLvl/$maxLvl',
+                        style: GoogleFonts.shareTechMono(color: Colors.amberAccent, fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const Divider(color: Color(0xFF111111), height: 32),
+            Text(
+              cat.description,
+              style: GoogleFonts.shareTechMono(color: Colors.white70, fontSize: 13, height: 1.6),
+            ),
+            const SizedBox(height: 24),
+            
+            Text(
+              'PERFORMANCE CHARACTERISTICS',
+              style: GoogleFonts.shareTechMono(color: Colors.white30, fontSize: 11, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+
+            _UpgradeStatRow(
+              label: 'Attack Power',
+              current: '${us.attack}',
+              next: isMax ? null : '${us.attack + attackBonus}',
+              delta: isMax ? null : '+$attackBonus',
+            ),
+            _UpgradeStatRow(
+              label: 'Penetration Ability',
+              current: '${us.penetrationAbility}',
+              next: isMax ? null : '${us.penetrationAbility + penetrationBonus}',
+              delta: isMax ? null : '+$penetrationBonus',
+            ),
+            _UpgradeStatRow(
+              label: 'Trace Emission',
+              current: '${us.residualTrace}',
+              next: null,
+              delta: null,
+            ),
+
+            const Spacer(),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: canUpgrade ? () => _handleUpgrade(profileId, 'software', us.id!) : null,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.greenAccent,
+                  disabledForegroundColor: Colors.white24,
+                  side: BorderSide(
+                    color: canUpgrade ? Colors.greenAccent : const Color(0xFF222222),
+                  ),
+                  backgroundColor: canUpgrade ? const Color(0xFF0C160C) : Colors.transparent,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                ),
+                child: Text(
+                  buttonText,
+                  style: GoogleFonts.shareTechMono(fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 1.5),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHardwareUpgrade(int profileId, int balance, OwnedHardware o) {
+    final uh = o.userHardware;
+    final HardwareItem cat = o.catalogItem;
+
+    final currentLvl = uh.currentLevel;
+    const maxLvl = 5;
+    final isMax = currentLvl >= maxLvl;
+
+    int cost = 0;
+    int powerBonus = 0;
+
+    if (!isMax) {
+      cost = (cat.basePrice * 0.6 * currentLvl).round();
+      powerBonus = (cat.initComputePower * 0.25).round();
+    }
+
+    final isAffordable = balance >= cost;
+    final canUpgrade = !isMax && isAffordable && !_isUpgrading;
+
+    String buttonText = 'UPGRADE MODULE  ·  $cost EPTS';
+    if (isMax) {
+      buttonText = 'MAXIMUM CAPACITY REACHED';
+    } else if (!isAffordable) {
+      buttonText = 'INSUFFICIENT EPTS BALANCE';
+    } else if (_isUpgrading) {
+      buttonText = 'INSTALLING HARDWARE BOARD...';
+    }
+
+    return GameScaffold(
+      screenNum: '9.2',
+      screenName: 'WORKSHOP HARDWARE',
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0C160C),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFF1E351E)),
+                  ),
+                  child: const Icon(Icons.dns, color: Colors.greenAccent, size: 20),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        cat.name,
+                        style: GoogleFonts.shareTechMono(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        'HARDWARE MODULE  ·  LEVEL $currentLvl/$maxLvl',
+                        style: GoogleFonts.shareTechMono(color: Colors.amberAccent, fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const Divider(color: Color(0xFF111111), height: 32),
+            Text(
+              cat.description,
+              style: GoogleFonts.shareTechMono(color: Colors.white70, fontSize: 13, height: 1.6),
+            ),
+            const SizedBox(height: 24),
+
+            Text(
+              'PERFORMANCE CHARACTERISTICS',
+              style: GoogleFonts.shareTechMono(color: Colors.white30, fontSize: 11, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+
+            _UpgradeStatRow(
+              label: 'Compute Power',
+              current: '${uh.computePower} FLOPS',
+              next: isMax ? null : '${uh.computePower + powerBonus} FLOPS',
+              delta: isMax ? null : '+$powerBonus',
+            ),
+            _UpgradeStatRow(
+              label: 'Power Draw',
+              current: '${uh.powerDraw} W',
+              next: null,
+              delta: null,
+            ),
+
+            const Spacer(),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: canUpgrade ? () => _handleUpgrade(profileId, 'hardware', uh.id!) : null,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.greenAccent,
+                  disabledForegroundColor: Colors.white24,
+                  side: BorderSide(
+                    color: canUpgrade ? Colors.greenAccent : const Color(0xFF222222),
+                  ),
+                  backgroundColor: canUpgrade ? const Color(0xFF0C160C) : Colors.transparent,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                ),
+                child: Text(
+                  buttonText,
+                  style: GoogleFonts.shareTechMono(fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 1.5),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _UpgradeStatRow extends StatelessWidget {
+  const _UpgradeStatRow({
+    required this.label,
+    required this.current,
+    this.next,
+    this.delta,
+  });
+
+  final String label;
+  final String current;
+  final String? next;
+  final String? delta;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: GoogleFonts.shareTechMono(color: Colors.white38, fontSize: 12),
+            ),
+          ),
+          if (next == null)
+            Text(
+              current,
+              style: GoogleFonts.shareTechMono(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.bold),
+            )
+          else
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  current,
+                  style: GoogleFonts.shareTechMono(color: Colors.white38, fontSize: 13),
+                ),
+                const SizedBox(width: 8),
+                const Icon(Icons.arrow_forward, color: Colors.white24, size: 12),
+                const SizedBox(width: 8),
+                Text(
+                  next!,
+                  style: GoogleFonts.shareTechMono(color: Colors.greenAccent, fontSize: 13, fontWeight: FontWeight.bold),
+                ),
+                if (delta != null) ...[
+                  const SizedBox(width: 6),
+                  Text(
+                    '($delta)',
+                    style: GoogleFonts.shareTechMono(color: Colors.greenAccent, fontSize: 11, fontWeight: FontWeight.w500),
+                  ),
+                ]
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+}

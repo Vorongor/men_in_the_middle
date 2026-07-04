@@ -16,6 +16,19 @@ class AppImages {
 
 class AppAudio {
   static const mainTheme = 'main_theme.mp3';
+
+  // Sniffer minigame SFX. No clips are bundled yet (assets/audio/ only ships
+  // mainTheme) — AudioService.playSfx() no-ops safely until an audio pass
+  // adds these files.
+  static const sfxCatch = 'sfx_catch.mp3';
+  static const sfxHit = 'sfx_hit.mp3';
+  static const sfxWin = 'sfx_win.mp3';
+  static const sfxLose = 'sfx_lose.mp3';
+
+  // Economy/progression SFX — same "no clips yet" situation as above.
+  static const sfxPurchase = 'sfx_purchase.mp3';
+  static const sfxUpgrade = 'sfx_upgrade.mp3';
+  static const sfxLevelUp = 'sfx_level_up.mp3';
 }
 
 class AppErrors {

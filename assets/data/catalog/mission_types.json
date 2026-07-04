@@ -1,0 +1,37 @@
+[
+  {
+    "id": 1,
+    "name": "Data Theft",
+    "description": "Extract sensitive user credentials or personal cookies through phishing.",
+    "primary_soft_type_id": 1,
+    "base_reward_mult": 1.0
+  },
+  {
+    "id": 2,
+    "name": "Password Cracking",
+    "description": "Brute force into database servers and hacker nodes to recover hidden keys.",
+    "primary_soft_type_id": 2,
+    "base_reward_mult": 1.2
+  },
+  {
+    "id": 3,
+    "name": "System Sabotage",
+    "description": "Perform botnet DDoS flooding against corporate infrastructure.",
+    "primary_soft_type_id": 3,
+    "base_reward_mult": 1.5
+  },
+  {
+    "id": 4,
+    "name": "Code Injection",
+    "description": "Exploit zero-day vulnerabilities to gain deep-level access to government nodes.",
+    "primary_soft_type_id": 4,
+    "base_reward_mult": 1.8
+  },
+  {
+    "id": 5,
+    "name": "Clean Up Traces",
+    "description": "Scrub logs and residual footprints to shake off active surveillance. Pays in reduced heat, not credits.",
+    "primary_soft_type_id": 1,
+    "base_reward_mult": 1.0
+  }
+]

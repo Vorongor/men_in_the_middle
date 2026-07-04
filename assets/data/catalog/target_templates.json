@@ -1,0 +1,162 @@
+[
+  {
+    "id": 1,
+    "type_id": 1,
+    "name": "Local Merchant PC",
+    "required_level": 1,
+    "base_defense": 30,
+    "epts_reward": 80,
+    "trust_reward": 2,
+    "custom_mechanics": {"is_honeypot": false}
+  },
+  {
+    "id": 2,
+    "type_id": 2,
+    "name": "Celebrity Smart Home",
+    "required_level": 1,
+    "base_defense": 45,
+    "epts_reward": 120,
+    "trust_reward": 4,
+    "custom_mechanics": {"is_honeypot": false}
+  },
+  {
+    "id": 3,
+    "type_id": 3,
+    "name": "System Admin Email",
+    "required_level": 1,
+    "base_defense": 60,
+    "epts_reward": 150,
+    "trust_reward": 5,
+    "custom_mechanics": {"is_honeypot": false}
+  },
+  {
+    "id": 4,
+    "type_id": 1,
+    "name": "Hobbyist Crypto Wallet",
+    "required_level": 2,
+    "base_defense": 80,
+    "epts_reward": 200,
+    "trust_reward": 6,
+    "custom_mechanics": {"honeypot_chance": 0.05}
+  },
+  {
+    "id": 5,
+    "type_id": 4,
+    "name": "Rival Hacker Node v1",
+    "required_level": 2,
+    "base_defense": 100,
+    "epts_reward": 280,
+    "trust_reward": 8,
+    "custom_mechanics": {"counter_hack_risk": 0.1}
+  },
+  {
+    "id": 6,
+    "type_id": 5,
+    "name": "Local Bank Branch",
+    "required_level": 2,
+    "base_defense": 120,
+    "epts_reward": 350,
+    "trust_reward": 10,
+    "custom_mechanics": {"is_honeypot": false}
+  },
+  {
+    "id": 7,
+    "type_id": 2,
+    "name": "Celebrity Private Cloud",
+    "required_level": 3,
+    "base_defense": 150,
+    "epts_reward": 420,
+    "trust_reward": 12,
+    "custom_mechanics": {"encryption_type": "standard"}
+  },
+  {
+    "id": 8,
+    "type_id": 3,
+    "name": "Corporate HR Portal",
+    "required_level": 3,
+    "base_defense": 200,
+    "epts_reward": 550,
+    "trust_reward": 15,
+    "custom_mechanics": {"mfa_active": true}
+  },
+  {
+    "id": 9,
+    "type_id": 6,
+    "name": "Municipality Database",
+    "required_level": 3,
+    "base_defense": 250,
+    "epts_reward": 680,
+    "trust_reward": 18,
+    "custom_mechanics": {"firewall_level": 2}
+  },
+  {
+    "id": 10,
+    "type_id": 4,
+    "name": "Rival Hacker C2 Node",
+    "required_level": 4,
+    "base_defense": 350,
+    "epts_reward": 850,
+    "trust_reward": 22,
+    "custom_mechanics": {"counter_hack_risk": 0.25}
+  },
+  {
+    "id": 11,
+    "type_id": 5,
+    "name": "E-Commerce Main DB",
+    "required_level": 4,
+    "base_defense": 450,
+    "epts_reward": 1100,
+    "trust_reward": 28,
+    "custom_mechanics": {"ips_active": true}
+  },
+  {
+    "id": 12,
+    "type_id": 7,
+    "name": "Cyberpol Field Hub",
+    "required_level": 4,
+    "base_defense": 600,
+    "epts_reward": 1400,
+    "trust_reward": 35,
+    "custom_mechanics": {"honeypot_chance": 0.2}
+  },
+  {
+    "id": 13,
+    "type_id": 6,
+    "name": "National Registry Node",
+    "required_level": 5,
+    "base_defense": 800,
+    "epts_reward": 1800,
+    "trust_reward": 45,
+    "custom_mechanics": {"firewall_level": 4}
+  },
+  {
+    "id": 14,
+    "type_id": 5,
+    "name": "MegaCorp Core Database",
+    "required_level": 5,
+    "base_defense": 1100,
+    "epts_reward": 2400,
+    "trust_reward": 60,
+    "custom_mechanics": {"is_mainframe": true}
+  },
+  {
+    "id": 15,
+    "type_id": 7,
+    "name": "Cyberpol Mainframe",
+    "required_level": 6,
+    "base_defense": 1500,
+    "epts_reward": 3200,
+    "trust_reward": 80,
+    "custom_mechanics": {"is_honeypot": false, "active_countermeasures": true}
+  },
+  {
+    "id": 16,
+    "type_id": 1,
+    "name": "Digital Footprint Cleanup",
+    "required_level": 1,
+    "base_defense": 40,
+    "epts_reward": 0,
+    "trust_reward": 0,
+    "custom_mechanics": {"is_cleanup": true}
+  }
+]

@@ -1,22 +1,24 @@
-import 'package:crypto/crypto.dart';
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'dart:convert';
-import '../db/database_helper.dart';
-import '../services/audio_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../state/player_session.dart';
+import '../utils/app_logger.dart';
 import '../utils/constants.dart';
 import '../utils/routes.dart';
 import '../widgets/video_bg.dart';
 
-String _hashPassword(String raw) => sha256.convert(utf8.encode(raw)).toString();
-
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends ConsumerState<LoginScreen> {
+  static final _log = AppLogger.of('LoginScreen');
+
   final _pseudoCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   bool _loading = false;
@@ -44,19 +46,18 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _loading = true);
     final nav = Navigator.of(context);
     try {
-      final hash = _hashPassword(_passCtrl.text);
-      final result = await DatabaseHelper.instance.login(
-        _pseudoCtrl.text.trim(),
-        hash,
-      );
+      final ok = await ref
+          .read(playerSessionProvider.notifier)
+          .login(_pseudoCtrl.text.trim(), _passCtrl.text);
       if (!mounted) return;
-      if (result != null) {
-        await AudioService.instance.stopBgm();
-        nav.pushReplacementNamed(Routes.dashboard, arguments: result);
+      if (ok) {
+        // BGM deliberately keeps playing into the hub — see AudioService.
+        unawaited(nav.pushReplacementNamed(Routes.homePage));
       } else {
         _showError(AppErrors.wrongCredentials);
       }
-    } catch (_) {
+    } catch (e) {
+      _log.warning('Login failed', e);
       if (mounted) _showError(AppErrors.dbFail);
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -67,15 +68,13 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _loading = true);
     final nav = Navigator.of(context);
     try {
-      final hash = _hashPassword(_passCtrl.text);
-      final result = await DatabaseHelper.instance.register(
-        _pseudoCtrl.text.trim(),
-        hash,
-      );
+      await ref
+          .read(playerSessionProvider.notifier)
+          .register(_pseudoCtrl.text.trim(), _passCtrl.text);
       if (!mounted) return;
-      await AudioService.instance.stopBgm();
-      nav.pushReplacementNamed(Routes.dashboard, arguments: result);
-    } catch (_) {
+      unawaited(nav.pushReplacementNamed(Routes.homePage));
+    } catch (e) {
+      _log.warning('Registration failed', e);
       if (mounted) _showError(AppErrors.dbFail);
     } finally {
       if (mounted) setState(() => _loading = false);
