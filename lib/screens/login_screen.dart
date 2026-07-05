@@ -7,6 +7,7 @@ import '../state/player_session.dart';
 import '../utils/app_logger.dart';
 import '../utils/constants.dart';
 import '../utils/routes.dart';
+import '../widgets/app_snack.dart';
 import '../widgets/video_bg.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -31,15 +32,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          msg,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: Colors.red[900],
-      ),
-    );
+    showAppSnack(context, msg, kind: AppSnackKind.error);
   }
 
   Future<void> _onEnter() async {

@@ -14,6 +14,7 @@ import '../utils/async_value_ext.dart';
 import '../utils/route_args.dart';
 import '../utils/routes.dart';
 import '../utils/wanted_effects.dart';
+import '../widgets/app_snack.dart';
 import '../widgets/game_scaffold.dart';
 import '../widgets/onboarding_banner.dart';
 
@@ -68,14 +69,10 @@ class _TargetBoardScreenState extends ConsumerState<TargetBoardScreen> {
     } catch (e) {
       _log.warning('ensureCleanUpContract($profileId) failed', e);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: const Color(0xFF240C0C),
-            content: Text(
-              'CLEANUP DISPATCH FAILED: $e',
-              style: GoogleFonts.shareTechMono(color: Colors.redAccent),
-            ),
-          ),
+        showAppSnack(
+          context,
+          'CLEANUP DISPATCH FAILED: $e',
+          kind: AppSnackKind.error,
         );
       }
     } finally {
@@ -86,14 +83,10 @@ class _TargetBoardScreenState extends ConsumerState<TargetBoardScreen> {
   Future<void> _handleRefresh(int currentBalance, EconomyTuning tuning, bool isFree) async {
     final fee = isFree ? 0 : tuning.boardRefreshFee;
     if (currentBalance < fee) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: const Color(0xFF240C0C),
-          content: Text(
-            'INSUFFICIENT EPTS BALANCE TO REFRESH SCANNER',
-            style: GoogleFonts.shareTechMono(color: Colors.redAccent),
-          ),
-        ),
+      showAppSnack(
+        context,
+        'INSUFFICIENT EPTS BALANCE TO REFRESH SCANNER',
+        kind: AppSnackKind.error,
       );
       return;
     }
@@ -112,30 +105,22 @@ class _TargetBoardScreenState extends ConsumerState<TargetBoardScreen> {
         await ref.read(playerSessionProvider.notifier).refresh();
         ref.invalidate(activeContractsProvider);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              backgroundColor: const Color(0xFF0C160C),
-              content: Text(
-                isFree
-                    ? 'EMERGENCY SCAN COMPLETE (FREE)'
-                    : 'TARGET SCAN COMPLETELY REFRESHED ($fee EPTS DEDUCTED)',
-                style: GoogleFonts.shareTechMono(color: Colors.greenAccent),
-              ),
-            ),
+          showAppSnack(
+            context,
+            isFree
+                ? 'EMERGENCY SCAN COMPLETE (FREE)'
+                : 'TARGET SCAN COMPLETELY REFRESHED ($fee EPTS DEDUCTED)',
+            kind: AppSnackKind.success,
           );
         }
       }
     } catch (e) {
       _log.warning('refreshContracts failed', e);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: const Color(0xFF240C0C),
-            content: Text(
-              'REFRESH FAILED: $e',
-              style: GoogleFonts.shareTechMono(color: Colors.redAccent),
-            ),
-          ),
+        showAppSnack(
+          context,
+          'REFRESH FAILED: $e',
+          kind: AppSnackKind.error,
         );
       }
     } finally {

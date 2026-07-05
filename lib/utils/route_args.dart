@@ -27,6 +27,17 @@ class WorkshopItemArgs {
   final String itemType; // 'software' or 'hardware'
   final int id; // DB primary key in user_software / user_hardware
   const WorkshopItemArgs({required this.itemType, required this.id});
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WorkshopItemArgs &&
+          runtimeType == other.runtimeType &&
+          itemType == other.itemType &&
+          id == other.id;
+
+  @override
+  int get hashCode => itemType.hashCode ^ id.hashCode;
 }
 
 /// Typed route arguments for News item detail screen.

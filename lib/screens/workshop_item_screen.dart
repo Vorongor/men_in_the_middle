@@ -17,7 +17,30 @@ import '../utils/app_logger.dart';
 import '../utils/async_value_ext.dart';
 import '../utils/constants.dart';
 import '../utils/route_args.dart';
+import '../widgets/app_snack.dart';
 import '../widgets/game_scaffold.dart';
+
+class WorkshopItemData {
+  final dynamic match; // OwnedSoftware or OwnedHardware
+  final int totalOwned;
+
+  const WorkshopItemData({required this.match, required this.totalOwned});
+}
+
+final workshopItemDataProvider = FutureProvider.family<WorkshopItemData, WorkshopItemArgs>((ref, args) async {
+  final profile = ref.watch(playerSessionProvider).valueOrNull?.profile;
+  if (profile == null) throw Exception('Not authenticated');
+  final repo = ref.watch(inventoryRepositoryProvider);
+  if (args.itemType == 'software') {
+    final list = await repo.fetchOwnedSoftware(profile.id!);
+    final match = list.firstWhere((o) => o.userSoftware.id == args.id);
+    return WorkshopItemData(match: match, totalOwned: list.length);
+  } else {
+    final list = await repo.fetchOwnedHardware(profile.id!);
+    final match = list.firstWhere((o) => o.userHardware.id == args.id);
+    return WorkshopItemData(match: match, totalOwned: list.length);
+  }
+});
 
 class WorkshopItemScreen extends ConsumerStatefulWidget {
   const WorkshopItemScreen({super.key});
@@ -46,29 +69,24 @@ class _WorkshopItemScreenState extends ConsumerState<WorkshopItemScreen> {
       await ref.read(playerSessionProvider.notifier).refresh();
       unawaited(AudioService.instance.playSfx(AppAudio.sfxUpgrade));
 
+      // Invalidate provider to trigger UI redraw on spot
+      final args = WorkshopItemArgs(itemType: type, id: id);
+      ref.invalidate(workshopItemDataProvider(args));
+
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: const Color(0xFF0C160C),
-            content: Text(
-              'UPGRADE COMPLETED SUCCESSFULLY',
-              style: GoogleFonts.shareTechMono(color: Colors.greenAccent),
-            ),
-          ),
+        showAppSnack(
+          context,
+          'UPGRADE COMPLETED SUCCESSFULLY',
+          kind: AppSnackKind.success,
         );
-        Navigator.pop(context);
       }
     } catch (e) {
       _log.warning('Upgrade of $type item #$id failed', e);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: const Color(0xFF240C0C),
-            content: Text(
-              'UPGRADE FAILED: $e',
-              style: GoogleFonts.shareTechMono(color: Colors.redAccent),
-            ),
-          ),
+        showAppSnack(
+          context,
+          'UPGRADE FAILED: $e',
+          kind: AppSnackKind.error,
         );
       }
     } finally {
@@ -93,28 +111,20 @@ class _WorkshopItemScreenState extends ConsumerState<WorkshopItemScreen> {
       unawaited(AudioService.instance.playSfx(AppAudio.sfxUpgrade));
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: const Color(0xFF0C160C),
-            content: Text(
-              'MODULE SOLD SUCCESSFULLY (+$earnedAmount EPTS)',
-              style: GoogleFonts.shareTechMono(color: Colors.greenAccent),
-            ),
-          ),
+        showAppSnack(
+          context,
+          'MODULE SOLD SUCCESSFULLY (+$earnedAmount EPTS)',
+          kind: AppSnackKind.success,
         );
         Navigator.pop(context);
       }
     } catch (e) {
       _log.warning('Sell of $type item #$id failed', e);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: const Color(0xFF240C0C),
-            content: Text(
-              'SELL FAILED: $e',
-              style: GoogleFonts.shareTechMono(color: Colors.redAccent),
-            ),
-          ),
+        showAppSnack(
+          context,
+          'SELL FAILED: $e',
+          kind: AppSnackKind.error,
         );
       }
     } finally {
@@ -176,7 +186,6 @@ class _WorkshopItemScreenState extends ConsumerState<WorkshopItemScreen> {
       );
     }
 
-    final repo = ref.read(inventoryRepositoryProvider);
     final tuningAsync = ref.watch(economyTuningProvider);
     final tuning = tuningAsync.valueOrNull ?? const EconomyTuning(
       boardRefreshFee: 10,
@@ -185,41 +194,24 @@ class _WorkshopItemScreenState extends ConsumerState<WorkshopItemScreen> {
       insuranceMinReward: 10,
     );
 
-    return FutureBuilder(
-      future: args.itemType == 'software'
-          ? repo.fetchOwnedSoftware(profile.id!)
-          : repo.fetchOwnedHardware(profile.id!),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const GameScaffold(
-            screenNum: '9.2',
-            screenName: 'WORKSHOP ITEM',
-            body: Center(child: CircularProgressIndicator(color: Colors.green)),
-          );
-        }
+    final itemAsync = ref.watch(workshopItemDataProvider(args));
 
+    return itemAsync.when(
+      loading: () => const GameScaffold(
+        screenNum: '9.2',
+        screenName: 'WORKSHOP ITEM',
+        body: Center(child: CircularProgressIndicator(color: Colors.green)),
+      ),
+      error: (err, stack) => GameScaffold(
+        screenNum: '9.2',
+        screenName: 'WORKSHOP ITEM',
+        body: Center(child: Text('Error: $err', style: const TextStyle(color: Colors.red))),
+      ),
+      data: (data) {
         if (args.itemType == 'software') {
-          final list = snapshot.data as List<OwnedSoftware>? ?? <OwnedSoftware>[];
-          final match = list.where((o) => o.userSoftware.id == args.id);
-          if (match.isEmpty) {
-            return const GameScaffold(
-              screenNum: '9.2',
-              screenName: 'WORKSHOP ITEM',
-              body: Center(child: Text('Software item not found in inventory')),
-            );
-          }
-          return _buildSoftwareUpgrade(profile.id!, profile.eptsBalance, match.first, list.length, tuning);
+          return _buildSoftwareUpgrade(profile.id!, profile.eptsBalance, data.match as OwnedSoftware, data.totalOwned, tuning);
         } else {
-          final list = snapshot.data as List<OwnedHardware>? ?? <OwnedHardware>[];
-          final match = list.where((o) => o.userHardware.id == args.id);
-          if (match.isEmpty) {
-            return const GameScaffold(
-              screenNum: '9.2',
-              screenName: 'WORKSHOP ITEM',
-              body: Center(child: Text('Hardware item not found in inventory')),
-            );
-          }
-          return _buildHardwareUpgrade(profile.id!, profile.eptsBalance, match.first, list.length, tuning);
+          return _buildHardwareUpgrade(profile.id!, profile.eptsBalance, data.match as OwnedHardware, data.totalOwned, tuning);
         }
       },
     );
@@ -349,14 +341,10 @@ class _WorkshopItemScreenState extends ConsumerState<WorkshopItemScreen> {
                         ? null
                         : () {
                             if (totalOwned <= 1) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  backgroundColor: const Color(0xFF240C0C),
-                                  content: Text(
-                                    'CANNOT SELL: You must keep at least one software tool.',
-                                    style: GoogleFonts.shareTechMono(color: Colors.redAccent),
-                                  ),
-                                ),
+                              showAppSnack(
+                                context,
+                                'CANNOT SELL: You must keep at least one software tool.',
+                                kind: AppSnackKind.error,
                               );
                               return;
                             }

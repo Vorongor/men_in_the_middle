@@ -14,6 +14,7 @@ import '../utils/async_value_ext.dart';
 import '../utils/constants.dart';
 import '../utils/route_args.dart';
 import '../utils/wanted_effects.dart';
+import '../widgets/app_snack.dart';
 import '../widgets/game_scaffold.dart';
 
 class StoreItemScreen extends ConsumerStatefulWidget {
@@ -54,28 +55,20 @@ class _StoreItemScreenState extends ConsumerState<StoreItemScreen> {
       unawaited(AudioService.instance.playSfx(AppAudio.sfxPurchase));
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: const Color(0xFF0C160C),
-            content: Text(
-              'SUCCESSFULLY PURCHASED: ${item.name.toUpperCase()}',
-              style: GoogleFonts.shareTechMono(color: Colors.greenAccent),
-            ),
-          ),
+        showAppSnack(
+          context,
+          'SUCCESSFULLY PURCHASED: ${item.name.toUpperCase()}',
+          kind: AppSnackKind.success,
         );
         Navigator.pop(context);
       }
     } catch (e) {
       _log.warning('Purchase of ${item.name} failed', e);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: const Color(0xFF240C0C),
-            content: Text(
-              'PURCHASE FAILED: $e',
-              style: GoogleFonts.shareTechMono(color: Colors.redAccent),
-            ),
-          ),
+        showAppSnack(
+          context,
+          'PURCHASE FAILED: $e',
+          kind: AppSnackKind.error,
         );
       }
     } finally {

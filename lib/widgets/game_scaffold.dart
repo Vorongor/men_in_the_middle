@@ -14,6 +14,7 @@ class GameScaffold extends ConsumerWidget {
     required this.body,
     this.showHomeButton = true,
     this.hideBackButton = false,
+    this.showSettings = true,
   });
 
   final String screenNum;
@@ -21,6 +22,7 @@ class GameScaffold extends ConsumerWidget {
   final Widget body;
   final bool showHomeButton;
   final bool hideBackButton;
+  final bool showSettings;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -71,6 +73,12 @@ class GameScaffold extends ConsumerWidget {
                   ),
                 ),
               ),
+            ),
+          if (showSettings)
+            IconButton(
+              icon: const Icon(Icons.settings, size: 20),
+              tooltip: 'Settings',
+              onPressed: () => Navigator.pushNamed(context, Routes.settings),
             ),
           if (showHomeButton)
             IconButton(

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flame_audio/flame_audio.dart';
 
 import '../utils/app_logger.dart';
@@ -13,6 +14,7 @@ class AudioService {
   bool _playing = false;
 
   Future<void> startBgm() async {
+    if (Platform.environment.containsKey('FLUTTER_TEST')) return;
     if (_playing) return;
     await FlameAudio.bgm.initialize();
     await FlameAudio.bgm.play(
@@ -23,12 +25,14 @@ class AudioService {
   }
 
   Future<void> stopBgm() async {
+    if (Platform.environment.containsKey('FLUTTER_TEST')) return;
     if (!_playing) return;
     await FlameAudio.bgm.stop();
     _playing = false;
   }
 
   Future<void> applyVolume() async {
+    if (Platform.environment.containsKey('FLUTTER_TEST')) return;
     if (!_playing) return;
     await FlameAudio.bgm.audioPlayer
         .setVolume(SettingsService.instance.effectiveMusicVolume);
@@ -41,6 +45,7 @@ class AudioService {
   /// must not crash gameplay — it's a silent no-op until an audio pass adds
   /// the actual clips referenced by [AppAudio].
   Future<void> playSfx(String fileName) async {
+    if (Platform.environment.containsKey('FLUTTER_TEST')) return;
     final volume = SettingsService.instance.effectiveEffectsVolume;
     if (volume <= 0) return;
     try {

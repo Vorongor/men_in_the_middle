@@ -87,6 +87,7 @@ class _AttackScreenState extends ConsumerState<AttackScreen> {
       return const GameScaffold(
         screenNum: '7.2',
         screenName: 'ATTACK',
+        showSettings: false,
         body: Center(
           child: Text(
             'No attack in progress. Go back and prepare one first.',
@@ -111,6 +112,7 @@ class _AttackScreenState extends ConsumerState<AttackScreen> {
       child: GameScaffold(
         screenNum: '7.2',
         screenName: 'ATTACK',
+        showSettings: false,
         body: Column(
           children: [
             _AttackHeader(setup: setup),

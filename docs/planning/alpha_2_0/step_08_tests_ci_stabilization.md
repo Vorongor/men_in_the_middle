@@ -9,7 +9,7 @@ CI зелений, швидкий і чесний: analyze проходить, �
 
 ## Контекст
 
-- **CI червоний на analyze:** [pubspec.yaml:56-59](../../../pubspec.yaml) декларує `assets/images/characters/`, `assets/images/ui/`, `assets/fonts/` — локально порожні теки, git їх не трекає → на runner 3 warnings `asset_directory_does_not_exist` → exit 1. *(Якщо hotfix уже зроблено окремо — позначити 8.1 виконаним і перевірити зелений analyze-крок.)*
+- **CI червоний на analyze:** pubspec декларував `assets/images/characters/`, `assets/images/ui/`, `assets/fonts/`, які були порожні й не потрапляли в git → 3 warnings `asset_directory_does_not_exist` → exit 1. **Стан змінився (2026-07-05):** теки наповнені (шрифт GeistPixel у `fonts/`, `.gitkeep` у `characters/` та `ui/icons/`) — але нові асети ще не закомічені, і з'явилась нова прогалина: під-теки `assets/images/` (плоскі PNG, `hacker/`, `icons/`) та `assets/audio/` (`background_tracks/`, `sound_effects/`) **не декларовані в pubspec** — Flutter не бере asset-теки рекурсивно, тож нічого з нового не потрапить у білд.
 - **Тестовий крок CI ще жодного разу не виконувався** (падає раніше) — ризик №1 рев'ю (зависання `flutter test`) досі не перевірений.
 - **3 зависаючі widget-тести:** `economy_widgets_test.dart`, `target_board_widgets_test.dart`, `profile_widget_test.dart` — комбінація реальної файлової БД + ConsumerWidget + ProviderContainer; підозра на конфлікт двох Flutter SDK (`C:\Development\flutter` і `C:\flutter_SDK\flutter`).
 - **CI-конфіг** ([ci.yml](../../../.github/workflows/ci.yml)): `flutter test` без виключень і **без `timeout-minutes`** — зависання висітиме до 6-годинного ліміту GitHub.
@@ -17,9 +17,10 @@ CI зелений, швидкий і чесний: analyze проходить, �
 
 ## Задачі
 
-### 8.1 Hotfix CI (негайний, окремий коміт)
+### 8.1 Hotfix CI + asset-коміт (негайний, окремий коміт)
 
-- [ ] Прибрати з pubspec три рядки неіснуючих asset-тек (`characters/`, `ui/`, `fonts/`); `ui/` повернеться у кроці 06 разом із файлами, решта — коли з'являться асети.
+- [ ] Закомітити нові асети (шрифт + OFL, аудіо-теки, images, .gitkeep-и, три мапи в docs/planning) — це саме по собі знімає analyze-warnings про неіснуючі теки.
+- [ ] Доповнити pubspec під-теками, яких бракує: `assets/images/`, `assets/images/hacker/`, `assets/images/icons/`, `assets/audio/background_tracks/`, `assets/audio/sound_effects/` (формально споживачі — кроки 06–07, але рядки дешевше додати разом з асетами, щоб не ганяти CI двічі).
 - [ ] Додати `timeout-minutes: 20` на job у ci.yml — страховка від будь-яких майбутніх зависань.
 - [ ] Push → analyze-крок зелений; дочекатися тест-кроку: **якщо зависає** — негайно ізолювати 3 файли (задача 8.3, варіант Б) окремим комітом, не блокуючи main.
 

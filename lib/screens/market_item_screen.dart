@@ -14,6 +14,7 @@ import '../utils/async_value_ext.dart';
 import '../utils/constants.dart';
 import '../utils/route_args.dart';
 import '../utils/wanted_effects.dart';
+import '../widgets/app_snack.dart';
 import '../widgets/game_scaffold.dart';
 
 class MarketItemScreen extends ConsumerStatefulWidget {
@@ -39,28 +40,20 @@ class _MarketItemScreenState extends ConsumerState<MarketItemScreen> {
       unawaited(AudioService.instance.playSfx(AppAudio.sfxPurchase));
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: const Color(0xFF0C160C),
-            content: Text(
-              'SUCCESSFULLY INSTALLED: ${item.name.toUpperCase()}',
-              style: GoogleFonts.shareTechMono(color: Colors.greenAccent),
-            ),
-          ),
+        showAppSnack(
+          context,
+          'SUCCESSFULLY INSTALLED: ${item.name.toUpperCase()}',
+          kind: AppSnackKind.success,
         );
         Navigator.pop(context);
       }
     } catch (e) {
       _log.warning('Purchase of ${item.name} failed', e);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: const Color(0xFF240C0C),
-            content: Text(
-              'INSTALLATION FAILED: $e',
-              style: GoogleFonts.shareTechMono(color: Colors.redAccent),
-            ),
-          ),
+        showAppSnack(
+          context,
+          'INSTALLATION FAILED: $e',
+          kind: AppSnackKind.error,
         );
       }
     } finally {

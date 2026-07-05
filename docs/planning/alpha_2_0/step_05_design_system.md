@@ -1,31 +1,37 @@
 # Крок 05 — Дизайн-система: пресети кольорів і типографіки
 
 **Статус: ⬜ не розпочато** · Залежності: кроки 03–04 (щоб не мігрувати код, який ще змінюється) · Баг тест-звіту: **№8 (незначний, системний)**
-**Вхідні дані:** [general_alpha_2_0.md](general_alpha_2_0.md) (крок 05), скарга тестера: «дрібні шрифти губляться на екрані»
+**Вхідні дані:** [general_alpha_2_0.md](general_alpha_2_0.md) (крок 05), скарга тестера: «дрібні шрифти губляться на екрані», [color_map.md](../color_map.md), шрифт `assets/fonts/GeistPixel-Regular-VariableFont_ELSH.ttf` (OFL)
+
+> **Рішення власника (2026-07-05):** палітра — **Варіант 1 «Classic Terminal»** з color_map.md; **GeistPixel** — головний шрифт для заголовків, кнопок та акцентів; **Share Tech Mono** лишається для даних і дрібного тексту (піксельний шрифт на малих кеглях втрачає читабельність). Cinzel виводиться з ужитку.
 
 ## Мета
 
-Єдине джерело стилів замість розкиданих інлайнових значень: палітра, типографічні пресети та відступи живуть у `lib/theme/`, читабельність дрібного тексту виправлена системно. Це фундамент для іконок (крок 06) і брендингу (крок 07).
+Єдине джерело стилів замість розкиданих інлайнових значень: обрана палітра, типографічні пресети на GeistPixel/Share Tech Mono та відступи живуть у `lib/theme/`, читабельність дрібного тексту виправлена системно. Це фундамент для іконок (крок 06) і брендингу (крок 07).
 
 ## Контекст (з коду)
 
 - Тема застосунку — гола `ThemeData.dark()` в одному рядку ([app.dart:33](../../../lib/app.dart)).
 - Кожен екран несе власні інлайнові стилі: `GoogleFonts.cinzel(...)` / `GoogleFonts.shareTechMono(...)` з ручними розмірами, десятки hex-літералів (#0C160C, #1A1A1A, #222222, #240C0C…), текст на рівнях `Colors.white24/30/38/54/70`.
 - Головні порушники читабельності: кеглі 9–11 px на приглушених білих (white24–white38) поверх чорного — саме те, на що скаржився тестер (Target Board бейджі 9px, підписи 10-11px).
+- Шрифт GeistPixel лежить в `assets/fonts/`, але **не зареєстрований** у pubspec (`fonts:` секції немає) — Flutter його не бачить.
 
 ## Задачі
 
 ### 5.1 Токени (`lib/theme/`)
 
-- [ ] `app_colors.dart` — семантична палітра з поточної фактичної гами (не редизайн, а систематизація): `bg`, `surface`, `border`, `accent` (hacker green #39D353/greenAccent), `danger`, `warning`, `textPrimary`, `textSecondary`, `textMuted`. Правило контрасту: `textMuted` світлішає з white38 до рівня ≥ 4.5:1 на `bg`.
-- [ ] `app_text_styles.dart` — пресети: `displayTitle` (Cinzel), `sectionLabel` (Cinzel, letterSpacing), `body`, `dataMono` (Share Tech Mono), `caption`. **Мінімальні кеглі:** body/dataMono ≥ 13, caption ≥ 11 — менших пресетів не існує, це і є системний фікс бага №8.
+- [ ] `app_colors.dart` — палітра **Варіанта 1** з color_map.md: `bg #0A0A0C`, `surface #121417`, `primary #00FF41` (акценти/CTA), `secondary #008F11` (неактивне, рамки, фонові сітки), `text #E0E0E0` (основний — не чистий білий), `alert #FF003C` (danger/wanted) + похідні: `textMuted` (≥ 4.5:1 на bg), `warning` (лишити бурштиновий для попереджень underpowered), success/error фони снекбарів — темні відтінки primary/alert.
+- [ ] Мапінг зі старої гами задокументувати в коді: greenAccent→primary, #39D353→primary, white70/54→text, white38/24→textMuted, redAccent→alert, #0C160C→surface-success тощо — міграція стає механічною.
+- [ ] Зареєструвати **GeistPixel** у pubspec: секція `fonts:` → family `GeistPixel`, asset `assets/fonts/GeistPixel-Regular-VariableFont_ELSH.ttf`; ліцензія OFL уже в теці — додати згадку в `CREDITS.md`.
+- [ ] `app_text_styles.dart` — пресети: `displayTitle` (GeistPixel, великі кеглі), `sectionLabel` (GeistPixel + letterSpacing), `button` (GeistPixel), `statValue` (GeistPixel — цифри балансу/статів), `body` і `dataMono` (Share Tech Mono), `caption` (Share Tech Mono). **Мінімальні кеглі:** body/dataMono ≥ 13, caption ≥ 11, GeistPixel — не менше 14 (нижче піксельний шрифт розсипається; перевірити на телефонному DPI і за потреби підняти поріг). Менших пресетів не існує — це і є системний фікс бага №8.
 - [ ] `app_spacing.dart` — шкала відступів (4/8/12/16/20/24) і радіуси (2/4).
 - [ ] `app_theme.dart` — `ThemeData` з `colorScheme`, `textTheme`, `snackBarTheme`, `outlinedButtonTheme`, `dialogTheme`, `dividerTheme`, зібраними з токенів; підключити в [app.dart](../../../lib/app.dart) замість `ThemeData.dark()`.
 
 ### 5.2 Міграція екранів
 
 - [ ] Порядок — за частотою перед очима гравця: `game_scaffold` + `app_snack` → `home_page` → `target_board` → `attack_prep`/`attack`/`attack_result` → `store`/`market`/`workshop` (+item-екрани) → `news`/`profile` → `login`/`settings`/`home`.
-- [ ] Механічна заміна: інлайновий `TextStyle`/`Color`/`GoogleFonts.*` → токен; локальні `OutlinedButton.styleFrom` прибирати там, де тему покриває `outlinedButtonTheme` (кастомні варіанти — через тему або один спільний хелпер стилю кнопки).
+- [ ] Механічна заміна за мапінгом з 5.1: інлайновий `TextStyle`/`Color`/`GoogleFonts.*` → токен; `GoogleFonts.cinzel` → GeistPixel-пресети, `GoogleFonts.shareTechMono` → body/dataMono; локальні `OutlinedButton.styleFrom` прибирати там, де тему покриває `outlinedButtonTheme`.
+- [ ] Після повної міграції: залежність `google_fonts` більше не потрібна для Cinzel; якщо Share Tech Mono теж перевести на локальний ttf (завантажити, OFL) — `google_fonts` знімається зовсім (−залежність, −мережевий фолбек шрифтів). Рішення зафіксувати в Summary.
 - [ ] Кеглі 9–12 підтягнути до пресетів (найменший — caption 11); перевіряти верстку вузького вікна після кожного екрана (уроки кроку 01).
 - [ ] **Нове правило проєкту** (додати у general-план, принципи): жодного нового `TextStyle`, `Color(0x...)` чи `GoogleFonts.*` поза `lib/theme/` — рев'ю ловить це grep-ом.
 
@@ -42,7 +48,7 @@
 
 - [ ] `grep -rE "GoogleFonts\.|Color\(0x" lib/ --include="*.dart"` поза `lib/theme/` → 0 збігів (окрім згенерованих/тимчасово задокументованих винятків).
 - [ ] Жодного тексту < 11px; body-текст ≥ 13px; приглушені підписи читаються на цільовому телефонному DPI (ручна перевірка).
-- [ ] Візуальна гама впізнавано та сама (це систематизація, не редизайн) — порівняння скріншотів.
+- [ ] Гама відповідає Варіанту 1 color_map.md (звірка hex-значень токенів з документом); заголовки й кнопки — GeistPixel, дані — Share Tech Mono.
 
 ## Поза межами кроку
 
@@ -55,5 +61,6 @@
 | Ризик | Мітигація |
 | --- | --- |
 | Міграція зачепить widget-тести (пошук за стилем/кольором) | Тести правити на пошук за ключами/текстом, не за стилями |
-| «Систематизація» непомітно з'їде в редизайн і роздує крок | Правило: hex-значення токенів = поточні фактичні кольори; міняється лише контраст textMuted і мінімальні кеглі |
+| GeistPixel нечитабельний на малих кеглях телефону | Правило «GeistPixel ≥ 14, дрібне — Share Tech Mono» + рання перевірка на пристрої до масової міграції; у гіршому разі GeistPixel лишається тільки на display-кеглях |
+| Variable font (вісь ELSH) поводиться неочікувано у Flutter | Використовувати дефолтну вагу без варіативних осей; перевірити рендер на Windows і Android на першому ж екрані |
 | Підняття кеглів розсуне верстку вузьких екранів | Прогін кожного мігрованого екрана на 240px-вікні (набута практика кроку 01) |
