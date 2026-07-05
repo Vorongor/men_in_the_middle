@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../db/database_helper.dart';
+import '../models/economy_tuning.dart';
 import '../models/hardware_item.dart';
 import '../models/profile.dart';
 import '../models/software_item.dart';
@@ -91,6 +93,26 @@ class CatalogRepository {
         ),
     };
   }
+
+  /// Fetches the economy tuning configuration from meta.
+  Future<EconomyTuning> fetchEconomyTuning() async {
+    final d = await _db.db;
+    final rows = await d.query(
+      'meta',
+      where: 'key = ?',
+      whereArgs: ['economy_tuning'],
+    );
+    if (rows.isEmpty) {
+      return const EconomyTuning(
+        boardRefreshFee: 10,
+        sellRatio: 0.5,
+        contractTtlHours: 24,
+        insuranceMinReward: 10,
+      );
+    }
+    final raw = rows.first['value'] as String;
+    return EconomyTuning.fromMap(jsonDecode(raw) as Map<String, dynamic>);
+  }
 }
 
 // ── Provider ──────────────────────────────────────────────────────────────────
@@ -98,3 +120,7 @@ class CatalogRepository {
 final catalogRepositoryProvider = Provider<CatalogRepository>(
   (ref) => CatalogRepository(DatabaseHelper.instance),
 );
+
+final economyTuningProvider = FutureProvider<EconomyTuning>((ref) async {
+  return ref.watch(catalogRepositoryProvider).fetchEconomyTuning();
+});

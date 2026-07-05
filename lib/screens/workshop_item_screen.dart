@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../models/economy_tuning.dart';
 import '../models/hardware_item.dart';
 import '../models/software_item.dart';
 import '../models/user_hardware.dart';
 import '../models/user_software.dart';
+import '../repos/catalog_repository.dart';
 import '../repos/inventory_repository.dart';
 import '../services/audio_service.dart';
 import '../state/player_session.dart';
@@ -28,6 +30,7 @@ class _WorkshopItemScreenState extends ConsumerState<WorkshopItemScreen> {
   static final _log = AppLogger.of('WorkshopItemScreen');
 
   bool _isUpgrading = false;
+  bool _isSelling = false;
 
   Future<void> _handleUpgrade(int profileId, String type, int id) async {
     setState(() => _isUpgrading = true);
@@ -75,6 +78,84 @@ class _WorkshopItemScreenState extends ConsumerState<WorkshopItemScreen> {
     }
   }
 
+  Future<void> _handleSell(int profileId, String type, int id) async {
+    setState(() => _isSelling = true);
+    try {
+      final repo = ref.read(inventoryRepositoryProvider);
+      int earnedAmount = 0;
+      if (type == 'software') {
+        earnedAmount = await repo.sellSoftware(profileId, id);
+      } else {
+        earnedAmount = await repo.sellHardware(profileId, id);
+      }
+
+      await ref.read(playerSessionProvider.notifier).refresh();
+      unawaited(AudioService.instance.playSfx(AppAudio.sfxUpgrade));
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: const Color(0xFF0C160C),
+            content: Text(
+              'MODULE SOLD SUCCESSFULLY (+$earnedAmount EPTS)',
+              style: GoogleFonts.shareTechMono(color: Colors.greenAccent),
+            ),
+          ),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      _log.warning('Sell of $type item #$id failed', e);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: const Color(0xFF240C0C),
+            content: Text(
+              'SELL FAILED: $e',
+              style: GoogleFonts.shareTechMono(color: Colors.redAccent),
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSelling = false);
+      }
+    }
+  }
+
+  void _showSellConfirmation(BuildContext context, int profileId, String type, int id, int sellPrice, bool isLastHardware) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF0A0A0A),
+        title: Text(
+          'CONFIRM TRANSACTION',
+          style: GoogleFonts.shareTechMono(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          isLastHardware
+              ? 'WARNING: This is your last hardware module. Selling it will reduce your compute power to 0, which severely limits your attack capabilities. Are you sure you want to sell it for $sellPrice EPTS?'
+              : 'Are you sure you want to sell this module for $sellPrice EPTS?',
+          style: GoogleFonts.shareTechMono(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('CANCEL', style: GoogleFonts.shareTechMono(color: Colors.white38)),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _handleSell(profileId, type, id);
+            },
+            child: Text('SELL', style: GoogleFonts.shareTechMono(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final args = ModalRoute.of(context)!.settings.arguments as WorkshopItemArgs?;
@@ -96,6 +177,13 @@ class _WorkshopItemScreenState extends ConsumerState<WorkshopItemScreen> {
     }
 
     final repo = ref.read(inventoryRepositoryProvider);
+    final tuningAsync = ref.watch(economyTuningProvider);
+    final tuning = tuningAsync.valueOrNull ?? const EconomyTuning(
+      boardRefreshFee: 10,
+      sellRatio: 0.5,
+      contractTtlHours: 24,
+      insuranceMinReward: 10,
+    );
 
     return FutureBuilder(
       future: args.itemType == 'software'
@@ -120,7 +208,7 @@ class _WorkshopItemScreenState extends ConsumerState<WorkshopItemScreen> {
               body: Center(child: Text('Software item not found in inventory')),
             );
           }
-          return _buildSoftwareUpgrade(profile.id!, profile.eptsBalance, match.first);
+          return _buildSoftwareUpgrade(profile.id!, profile.eptsBalance, match.first, list.length, tuning);
         } else {
           final list = snapshot.data as List<OwnedHardware>? ?? <OwnedHardware>[];
           final match = list.where((o) => o.userHardware.id == args.id);
@@ -131,13 +219,13 @@ class _WorkshopItemScreenState extends ConsumerState<WorkshopItemScreen> {
               body: Center(child: Text('Hardware item not found in inventory')),
             );
           }
-          return _buildHardwareUpgrade(profile.id!, profile.eptsBalance, match.first);
+          return _buildHardwareUpgrade(profile.id!, profile.eptsBalance, match.first, list.length, tuning);
         }
       },
     );
   }
 
-  Widget _buildSoftwareUpgrade(int profileId, int balance, OwnedSoftware o) {
+  Widget _buildSoftwareUpgrade(int profileId, int balance, OwnedSoftware o, int totalOwned, EconomyTuning tuning) {
     final us = o.userSoftware;
     final SoftwareItem cat = o.catalogItem;
     
@@ -160,15 +248,25 @@ class _WorkshopItemScreenState extends ConsumerState<WorkshopItemScreen> {
     }
 
     final isAffordable = balance >= cost;
-    final canUpgrade = !isMax && isAffordable && !_isUpgrading;
+    final canUpgrade = !isMax && isAffordable && !_isUpgrading && !_isSelling;
 
-    String buttonText = 'UPGRADE MODULE  ·  $cost EPTS';
+    // Calculate sell price
+    int upgradesCost = 0;
+    for (int l = 2; l <= currentLvl; l++) {
+      final step = cat.levelUpStrategy[l.toString()] as Map<String, dynamic>?;
+      if (step != null) {
+        upgradesCost += step['cost'] as int? ?? 0;
+      }
+    }
+    final sellPrice = (tuning.sellRatio * (cat.basePrice + upgradesCost)).round();
+
+    String buttonText = 'UPGRADE · $cost EPTS';
     if (isMax) {
-      buttonText = 'MAXIMUM CAPACITY REACHED';
+      buttonText = 'MAX LEVEL';
     } else if (!isAffordable) {
-      buttonText = 'INSUFFICIENT EPTS BALANCE';
+      buttonText = 'NO FUNDS';
     } else if (_isUpgrading) {
-      buttonText = 'COMPILING SOURCE CODE...';
+      buttonText = 'COMPILING...';
     }
 
     return GameScaffold(
@@ -243,25 +341,62 @@ class _WorkshopItemScreenState extends ConsumerState<WorkshopItemScreen> {
             ),
 
             const Spacer(),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: canUpgrade ? () => _handleUpgrade(profileId, 'software', us.id!) : null,
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.greenAccent,
-                  disabledForegroundColor: Colors.white24,
-                  side: BorderSide(
-                    color: canUpgrade ? Colors.greenAccent : const Color(0xFF222222),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _isSelling || _isUpgrading
+                        ? null
+                        : () {
+                            if (totalOwned <= 1) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  backgroundColor: const Color(0xFF240C0C),
+                                  content: Text(
+                                    'CANNOT SELL: You must keep at least one software tool.',
+                                    style: GoogleFonts.shareTechMono(color: Colors.redAccent),
+                                  ),
+                                ),
+                              );
+                              return;
+                            }
+                            _showSellConfirmation(context, profileId, 'software', us.id!, sellPrice, false);
+                          },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.redAccent,
+                      disabledForegroundColor: Colors.white24,
+                      side: const BorderSide(color: Color(0xFF331111)),
+                      backgroundColor: const Color(0xFF1A0C0C),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                    ),
+                    child: Text(
+                      'SELL · +$sellPrice',
+                      style: GoogleFonts.shareTechMono(fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 1.5),
+                    ),
                   ),
-                  backgroundColor: canUpgrade ? const Color(0xFF0C160C) : Colors.transparent,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                 ),
-                child: Text(
-                  buttonText,
-                  style: GoogleFonts.shareTechMono(fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 1.5),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: canUpgrade ? () => _handleUpgrade(profileId, 'software', us.id!) : null,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.greenAccent,
+                      disabledForegroundColor: Colors.white24,
+                      side: BorderSide(
+                        color: canUpgrade ? Colors.greenAccent : const Color(0xFF222222),
+                      ),
+                      backgroundColor: canUpgrade ? const Color(0xFF0C160C) : Colors.transparent,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                    ),
+                    child: Text(
+                      buttonText,
+                      style: GoogleFonts.shareTechMono(fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 1.5),
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
             const SizedBox(height: 12),
           ],
@@ -270,7 +405,7 @@ class _WorkshopItemScreenState extends ConsumerState<WorkshopItemScreen> {
     );
   }
 
-  Widget _buildHardwareUpgrade(int profileId, int balance, OwnedHardware o) {
+  Widget _buildHardwareUpgrade(int profileId, int balance, OwnedHardware o, int totalOwned, EconomyTuning tuning) {
     final uh = o.userHardware;
     final HardwareItem cat = o.catalogItem;
 
@@ -287,15 +422,22 @@ class _WorkshopItemScreenState extends ConsumerState<WorkshopItemScreen> {
     }
 
     final isAffordable = balance >= cost;
-    final canUpgrade = !isMax && isAffordable && !_isUpgrading;
+    final canUpgrade = !isMax && isAffordable && !_isUpgrading && !_isSelling;
 
-    String buttonText = 'UPGRADE MODULE  ·  $cost EPTS';
+    // Calculate sell price
+    int upgradesCost = 0;
+    for (int lvl = 1; lvl < currentLvl; lvl++) {
+      upgradesCost += (cat.basePrice * 0.6 * lvl).round();
+    }
+    final sellPrice = (tuning.sellRatio * (cat.basePrice + upgradesCost)).round();
+
+    String buttonText = 'UPGRADE · $cost EPTS';
     if (isMax) {
-      buttonText = 'MAXIMUM CAPACITY REACHED';
+      buttonText = 'MAX LEVEL';
     } else if (!isAffordable) {
-      buttonText = 'INSUFFICIENT EPTS BALANCE';
+      buttonText = 'NO FUNDS';
     } else if (_isUpgrading) {
-      buttonText = 'INSTALLING HARDWARE BOARD...';
+      buttonText = 'INSTALLING...';
     }
 
     return GameScaffold(
@@ -364,25 +506,48 @@ class _WorkshopItemScreenState extends ConsumerState<WorkshopItemScreen> {
             ),
 
             const Spacer(),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: canUpgrade ? () => _handleUpgrade(profileId, 'hardware', uh.id!) : null,
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.greenAccent,
-                  disabledForegroundColor: Colors.white24,
-                  side: BorderSide(
-                    color: canUpgrade ? Colors.greenAccent : const Color(0xFF222222),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _isSelling || _isUpgrading
+                        ? null
+                        : () => _showSellConfirmation(context, profileId, 'hardware', uh.id!, sellPrice, totalOwned <= 1),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.redAccent,
+                      disabledForegroundColor: Colors.white24,
+                      side: const BorderSide(color: Color(0xFF331111)),
+                      backgroundColor: const Color(0xFF1A0C0C),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                    ),
+                    child: Text(
+                      'SELL · +$sellPrice',
+                      style: GoogleFonts.shareTechMono(fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 1.5),
+                    ),
                   ),
-                  backgroundColor: canUpgrade ? const Color(0xFF0C160C) : Colors.transparent,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                 ),
-                child: Text(
-                  buttonText,
-                  style: GoogleFonts.shareTechMono(fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 1.5),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: canUpgrade ? () => _handleUpgrade(profileId, 'hardware', uh.id!) : null,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.greenAccent,
+                      disabledForegroundColor: Colors.white24,
+                      side: BorderSide(
+                        color: canUpgrade ? Colors.greenAccent : const Color(0xFF222222),
+                      ),
+                      backgroundColor: canUpgrade ? const Color(0xFF0C160C) : Colors.transparent,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                    ),
+                    child: Text(
+                      buttonText,
+                      style: GoogleFonts.shareTechMono(fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 1.5),
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
             const SizedBox(height: 12),
           ],

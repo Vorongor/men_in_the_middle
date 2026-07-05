@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../db/database_helper.dart';
+import '../models/economy_tuning.dart';
 import '../models/hardware_item.dart';
 import '../models/software_item.dart';
 import '../models/user_hardware.dart';
@@ -31,6 +33,10 @@ class AlreadyOwnedException extends EconomyException {
 
 class MaxLevelReachedException extends EconomyException {
   const MaxLevelReachedException() : super('Item is already at maximum level.');
+}
+
+class LastSoftwareException extends EconomyException {
+  const LastSoftwareException() : super('Cannot sell your last software tool. You need at least one tool to perform attacks.');
 }
 
 // ── Repository ───────────────────────────────────────────────────────────────
@@ -363,6 +369,117 @@ class InventoryRepository {
 
       // 8. Recalculate powers
       await _recalculatePowersTxn(txn, profileId);
+    });
+  }
+
+  /// Sells a software item inside a transaction.
+  /// Returns the earned epts amount.
+  Future<int> sellSoftware(int profileId, int userSoftId) async {
+    final d = await _db.db;
+    return d.transaction((txn) async {
+      // 1. Fetch current profile state
+      final profileMaps = await txn.query('profiles', where: 'id = ?', whereArgs: [profileId]);
+      if (profileMaps.isEmpty) throw Exception('Profile not found');
+      final currentEpts = profileMaps.first['epts_balance'] as int;
+
+      // 2. Fetch all user software owned by this profile to guard against selling the last one
+      final ownedSoftMaps = await txn.query('user_software', where: 'profile_id = ?', whereArgs: [profileId]);
+      if (ownedSoftMaps.length <= 1) {
+        throw const LastSoftwareException();
+      }
+
+      // 3. Fetch specific user software entry
+      final usMaps = await txn.query('user_software', where: 'id = ? AND profile_id = ?', whereArgs: [userSoftId, profileId]);
+      if (usMaps.isEmpty) throw Exception('Owned software not found');
+      final us = UserSoftware.fromMap(usMaps.first);
+
+      // 4. Fetch catalog item
+      final catalogMaps = await txn.query('software_items', where: 'id = ?', whereArgs: [us.itemId]);
+      if (catalogMaps.isEmpty) throw Exception('Catalog item not found');
+      final catalog = SoftwareItem.fromMap(catalogMaps.first);
+
+      // 5. Load Economy Tuning
+      final tuningMaps = await txn.query('meta', where: 'key = ?', whereArgs: ['economy_tuning']);
+      final tuning = tuningMaps.isNotEmpty
+          ? EconomyTuning.fromMap(jsonDecode(tuningMaps.first['value'] as String) as Map<String, dynamic>)
+          : const EconomyTuning(boardRefreshFee: 10, sellRatio: 0.5, contractTtlHours: 24, insuranceMinReward: 10);
+
+      // 6. Calculate sell price
+      int upgradesCost = 0;
+      for (int l = 2; l <= us.currentLevel; l++) {
+        final step = catalog.levelUpStrategy[l.toString()] as Map<String, dynamic>?;
+        if (step != null) {
+          upgradesCost += step['cost'] as int? ?? 0;
+        }
+      }
+      final sellPrice = (tuning.sellRatio * (catalog.basePrice + upgradesCost)).round();
+
+      // 7. Delete from user_software
+      await txn.delete('user_software', where: 'id = ?', whereArgs: [userSoftId]);
+
+      // 8. Update profile balance
+      await txn.update(
+        'profiles',
+        {'epts_balance': currentEpts + sellPrice},
+        where: 'id = ?',
+        whereArgs: [profileId],
+      );
+
+      // 9. Recalculate powers
+      await _recalculatePowersTxn(txn, profileId);
+
+      return sellPrice;
+    });
+  }
+
+  /// Sells a hardware item inside a transaction.
+  /// Returns the earned epts amount.
+  Future<int> sellHardware(int profileId, int userHardId) async {
+    final d = await _db.db;
+    return d.transaction((txn) async {
+      // 1. Fetch current profile state
+      final profileMaps = await txn.query('profiles', where: 'id = ?', whereArgs: [profileId]);
+      if (profileMaps.isEmpty) throw Exception('Profile not found');
+      final currentEpts = profileMaps.first['epts_balance'] as int;
+
+      // 2. Fetch specific user hardware entry
+      final uhMaps = await txn.query('user_hardware', where: 'id = ? AND profile_id = ?', whereArgs: [userHardId, profileId]);
+      if (uhMaps.isEmpty) throw Exception('Owned hardware not found');
+      final uh = UserHardware.fromMap(uhMaps.first);
+
+      // 3. Fetch catalog item
+      final catalogMaps = await txn.query('hardware_items', where: 'id = ?', whereArgs: [uh.itemId]);
+      if (catalogMaps.isEmpty) throw Exception('Catalog item not found');
+      final catalog = HardwareItem.fromMap(catalogMaps.first);
+
+      // 4. Load Economy Tuning
+      final tuningMaps = await txn.query('meta', where: 'key = ?', whereArgs: ['economy_tuning']);
+      final tuning = tuningMaps.isNotEmpty
+          ? EconomyTuning.fromMap(jsonDecode(tuningMaps.first['value'] as String) as Map<String, dynamic>)
+          : const EconomyTuning(boardRefreshFee: 10, sellRatio: 0.5, contractTtlHours: 24, insuranceMinReward: 10);
+
+      // 5. Calculate sell price
+      int upgradesCost = 0;
+      for (int lvl = 1; lvl < uh.currentLevel; lvl++) {
+        upgradesCost += (catalog.basePrice * 0.6 * lvl).round();
+      }
+      final sellPrice = (tuning.sellRatio * (catalog.basePrice + upgradesCost)).round();
+
+      // 6. Delete from user_hardware
+      await txn.delete('user_hardware', where: 'id = ?', whereArgs: [userHardId]);
+
+      // 7. Update profile balance
+      await txn.update(
+        'profiles',
+        {'epts_balance': currentEpts + sellPrice},
+        where: 'id = ?',
+        whereArgs: [profileId],
+      );
+
+      // 8. Recalculate powers
+      await _recalculatePowersTxn(txn, profileId);
+
+      return sellPrice;
     });
   }
 

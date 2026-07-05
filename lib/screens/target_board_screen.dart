@@ -3,7 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../models/active_contract.dart';
+import '../models/economy_tuning.dart';
 import '../models/profile.dart';
+import '../repos/catalog_repository.dart';
+import '../repos/inventory_repository.dart';
 import '../repos/target_repository.dart';
 import '../state/player_session.dart';
 import '../utils/app_logger.dart';
@@ -19,7 +22,21 @@ final activeContractsProvider =
       final session = ref.watch(playerSessionProvider).valueOrNull;
       if (session == null || session.profile.id == null) return const [];
       final targetRepo = ref.watch(targetRepositoryProvider);
-      return targetRepo.fetchActiveContracts(session.profile.id!);
+      
+      var contracts = await targetRepo.fetchActiveContracts(session.profile.id!);
+      if (contracts.isEmpty) {
+        final inventoryRepo = ref.watch(inventoryRepositoryProvider);
+        final ownedSoft = await inventoryRepo.fetchOwnedSoftware(session.profile.id!);
+        final ownedSoftTypeIds = ownedSoft.map((s) => s.catalogItem.softTypeId).toList();
+        
+        await targetRepo.refreshContracts(
+          session.profile,
+          payFee: false,
+          ownedSoftTypeIds: ownedSoftTypeIds,
+        );
+        contracts = await targetRepo.fetchActiveContracts(session.profile.id!);
+      }
+      return contracts;
     });
 
 class TargetBoardScreen extends ConsumerStatefulWidget {
@@ -66,8 +83,9 @@ class _TargetBoardScreenState extends ConsumerState<TargetBoardScreen> {
     }
   }
 
-  Future<void> _handleRefresh(int currentBalance) async {
-    if (currentBalance < 10) {
+  Future<void> _handleRefresh(int currentBalance, EconomyTuning tuning, bool isFree) async {
+    final fee = isFree ? 0 : tuning.boardRefreshFee;
+    if (currentBalance < fee) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: const Color(0xFF240C0C),
@@ -84,9 +102,13 @@ class _TargetBoardScreenState extends ConsumerState<TargetBoardScreen> {
     try {
       final session = ref.read(playerSessionProvider).valueOrNull;
       if (session != null) {
+        final inventoryRepo = ref.read(inventoryRepositoryProvider);
+        final ownedSoft = await inventoryRepo.fetchOwnedSoftware(session.profile.id!);
+        final ownedSoftTypeIds = ownedSoft.map((s) => s.catalogItem.softTypeId).toList();
+
         await ref
             .read(targetRepositoryProvider)
-            .refreshContracts(session.profile, payFee: true);
+            .refreshContracts(session.profile, payFee: !isFree, ownedSoftTypeIds: ownedSoftTypeIds);
         await ref.read(playerSessionProvider.notifier).refresh();
         ref.invalidate(activeContractsProvider);
         if (mounted) {
@@ -94,7 +116,9 @@ class _TargetBoardScreenState extends ConsumerState<TargetBoardScreen> {
             SnackBar(
               backgroundColor: const Color(0xFF0C160C),
               content: Text(
-                'TARGET SCAN COMPLETELY REFRESHED (10 EPTS DEDUCTED)',
+                isFree
+                    ? 'EMERGENCY SCAN COMPLETE (FREE)'
+                    : 'TARGET SCAN COMPLETELY REFRESHED ($fee EPTS DEDUCTED)',
                 style: GoogleFonts.shareTechMono(color: Colors.greenAccent),
               ),
             ),
@@ -227,13 +251,20 @@ class _TargetBoardScreenState extends ConsumerState<TargetBoardScreen> {
 
     final activeContractsAsync = ref.watch(activeContractsProvider);
     final softwarePower = profile.softwarePower;
+    final tuningAsync = ref.watch(economyTuningProvider);
+    final tuning = tuningAsync.valueOrNull ?? const EconomyTuning(
+      boardRefreshFee: 10,
+      sellRatio: 0.5,
+      contractTtlHours: 24,
+      insuranceMinReward: 10,
+    );
 
     return GameScaffold(
       screenNum: '5.1',
       screenName: 'TARGET BOARD',
       body: Stack(
         children: [
-          _boardColumn(activeContractsAsync, softwarePower, profile),
+          _boardColumn(activeContractsAsync, softwarePower, profile, tuning),
           const OnboardingTip(
             tipKey: 'target_board',
             message:
@@ -249,6 +280,7 @@ class _TargetBoardScreenState extends ConsumerState<TargetBoardScreen> {
     AsyncValue<List<ContractDetails>> activeContractsAsync,
     int softwarePower,
     Profile profile,
+    EconomyTuning tuning,
   ) {
     return Column(
       children: [
@@ -427,15 +459,19 @@ class _TargetBoardScreenState extends ConsumerState<TargetBoardScreen> {
             child: OutlinedButton(
               onPressed: _isRefreshing
                   ? null
-                  : () => _handleRefresh(profile.eptsBalance),
+                  : () {
+                      final contracts = activeContractsAsync.valueOrNull ?? const [];
+                      final isFree = contracts.isEmpty;
+                      _handleRefresh(profile.eptsBalance, tuning, isFree);
+                    },
               style: OutlinedButton.styleFrom(
-                backgroundColor: profile.eptsBalance >= 10
+                backgroundColor: (activeContractsAsync.valueOrNull ?? const []).isEmpty || profile.eptsBalance >= tuning.boardRefreshFee
                     ? const Color(0xFF0C160C)
                     : Colors.transparent,
                 foregroundColor: Colors.greenAccent,
                 disabledForegroundColor: Colors.white24,
                 side: BorderSide(
-                  color: profile.eptsBalance >= 10
+                  color: (activeContractsAsync.valueOrNull ?? const []).isEmpty || profile.eptsBalance >= tuning.boardRefreshFee
                       ? Colors.greenAccent
                       : const Color(0xFF222222),
                 ),
@@ -447,7 +483,9 @@ class _TargetBoardScreenState extends ConsumerState<TargetBoardScreen> {
               child: Text(
                 _isRefreshing
                     ? 'RECALIBRATING RF RECEIVER...'
-                    : 'REFRESH WIRELESS SCAN  ·  10 EPTS',
+                    : (activeContractsAsync.valueOrNull ?? const []).isEmpty
+                        ? 'EMERGENCY SCAN  ·  FREE'
+                        : 'REFRESH WIRELESS SCAN  ·  ${tuning.boardRefreshFee} EPTS',
                 style: GoogleFonts.shareTechMono(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,

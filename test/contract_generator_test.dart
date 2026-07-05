@@ -62,6 +62,8 @@ void main() {
           filePath = 'assets/data/catalog/effectiveness.json';
         } else if (key.contains('level_curve.json')) {
           filePath = 'assets/data/catalog/level_curve.json';
+        } else if (key.contains('economy.json')) {
+          filePath = 'assets/data/catalog/economy.json';
         } else if (key.contains('legends.json')) {
           filePath = 'assets/data/legends.json';
         }
@@ -136,7 +138,7 @@ void main() {
       );
 
       // Refresh with payFee = true -> succeeds
-      await targetRepo.refreshContracts(profile, payFee: true);
+      await targetRepo.refreshContracts(profile, payFee: true, ownedSoftTypeIds: const [1]);
 
       final resProfileMaps = await db.query('profiles', where: 'id = ?', whereArgs: [profileId]);
       final resBalance = resProfileMaps.first['epts_balance'] as int;
@@ -163,7 +165,7 @@ void main() {
       );
 
       expect(
-        () => targetRepo.refreshContracts(profileLow, payFee: true),
+        () => targetRepo.refreshContracts(profileLow, payFee: true, ownedSoftTypeIds: const [1]),
         throwsA(isA<InsufficientFundsException>()),
       );
     });
@@ -174,15 +176,15 @@ void main() {
       final profileId = awp.profile.id!;
 
       // Generation with seed = 42
-      await targetRepo.refreshContracts(awp.profile, customSeed: 42);
+      await targetRepo.refreshContracts(awp.profile, customSeed: 42, ownedSoftTypeIds: const [1]);
       final contractsSeed42Run1 = await targetRepo.fetchActiveContracts(profileId);
 
       // Re-generation with seed = 42
-      await targetRepo.refreshContracts(awp.profile, customSeed: 42);
+      await targetRepo.refreshContracts(awp.profile, customSeed: 42, ownedSoftTypeIds: const [1]);
       final contractsSeed42Run2 = await targetRepo.fetchActiveContracts(profileId);
 
       // Re-generation with seed = 99
-      await targetRepo.refreshContracts(awp.profile, customSeed: 99);
+      await targetRepo.refreshContracts(awp.profile, customSeed: 99, ownedSoftTypeIds: const [1]);
       final contractsSeed99 = await targetRepo.fetchActiveContracts(profileId);
 
       expect(contractsSeed42Run1.length, contractsSeed42Run2.length);
@@ -213,7 +215,7 @@ void main() {
       final awp = await dbHelper.register(pseudo, 'Password123!');
       final profileId = awp.profile.id!;
 
-      await targetRepo.refreshContracts(_withWanted(awp.profile, 0), customSeed: 7);
+      await targetRepo.refreshContracts(_withWanted(awp.profile, 0), customSeed: 7, ownedSoftTypeIds: const [1]);
       final contracts = await targetRepo.fetchActiveContracts(profileId);
 
       expect(contracts.any((c) => c.isHoneypot), isFalse);
@@ -224,7 +226,7 @@ void main() {
       final awp = await dbHelper.register(pseudo, 'Password123!');
       final profileId = awp.profile.id!;
 
-      await targetRepo.refreshContracts(_withWanted(awp.profile, 60), customSeed: 7);
+      await targetRepo.refreshContracts(_withWanted(awp.profile, 60), customSeed: 7, ownedSoftTypeIds: const [1]);
       final contracts = await targetRepo.fetchActiveContracts(profileId);
 
       expect(contracts.where((c) => c.isHoneypot).length, 1);

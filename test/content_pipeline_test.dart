@@ -44,6 +44,8 @@ void main() {
           filePath = 'assets/data/catalog/effectiveness.json';
         } else if (key.contains('level_curve.json')) {
           filePath = 'assets/data/catalog/level_curve.json';
+        } else if (key.contains('economy.json')) {
+          filePath = 'assets/data/catalog/economy.json';
         } else if (key.contains('legends.json')) {
           filePath = 'assets/data/legends.json';
         }
@@ -65,6 +67,7 @@ void main() {
     final targetTemplates = File('assets/data/catalog/target_templates.json').readAsStringSync();
     final effectiveness = File('assets/data/catalog/effectiveness.json').readAsStringSync();
     final levelCurve = File('assets/data/catalog/level_curve.json').readAsStringSync();
+    final economy = File('assets/data/catalog/economy.json').readAsStringSync();
 
     test('Validates real production assets correctly', () {
       expect(
@@ -76,6 +79,7 @@ void main() {
           missionTypesJson: missionTypes,
           effectivenessJson: effectiveness,
           levelCurveJson: levelCurve,
+          economyJson: economy,
         ),
         returnsNormally,
       );
@@ -93,6 +97,7 @@ void main() {
           missionTypesJson: missionTypes,
           effectivenessJson: effectiveness,
           levelCurveJson: levelCurve,
+          economyJson: economy,
         ),
         throwsA(isA<FormatException>()),
       );
@@ -109,6 +114,7 @@ void main() {
           missionTypesJson: missionTypes,
           effectivenessJson: effectiveness,
           levelCurveJson: levelCurve,
+          economyJson: economy,
         ),
         throwsA(isA<FormatException>()),
       );

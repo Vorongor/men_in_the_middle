@@ -417,7 +417,7 @@ class DatabaseHelper {
 
     // Initial contract board generation
     final targetRepo = TargetRepository(this);
-    await targetRepo.refreshContracts(accountWithProfile.profile);
+    await targetRepo.refreshContracts(accountWithProfile.profile, ownedSoftTypeIds: const [1]);
 
     return accountWithProfile;
   }
