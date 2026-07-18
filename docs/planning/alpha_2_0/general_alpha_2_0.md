@@ -61,8 +61,8 @@
 | 01   | [step_01_critical_minigame_fix.md](step_01_critical_minigame_fix.md)  | Краш міні-гри + RenderFlex overflow на Attack Prep           | ✅     |
 | 02   | [step_02_economy_deadlock.md](step_02_economy_deadlock.md)       | Продаж предметів, оновлення Target Board, страховий контракт | ✅     |
 | 03   | [step_03_ux_moderate_bugs.md](step_03_ux_moderate_bugs.md)       | Снекбари, збереження контексту Workshop, Settings з гри      | ✅     |
-| 04   | [step_04_minor_bugs_news_calc.md](step_04_minor_bugs_news_calc.md)   | Керування новинами, калькулятор сили атаки на Prep           | ⬜     |
-| 05   | [step_05_design_system.md](step_05_design_system.md)          | Дизайн-токени: палітра, типографіка, spacing — єдина тема    | ⬜     |
+| 04   | [step_04_minor_bugs_news_calc.md](step_04_minor_bugs_news_calc.md)   | Керування новинами, калькулятор сили атаки на Prep           | ✅     |
+| 05   | [step_05_design_system.md](step_05_design_system.md)          | Дизайн-токени: палітра, типографіка, spacing — єдина тема    | ✅     |
 | 06   | [step_06_icon_presets.md](step_06_icon_presets.md)           | Пресети іконок: предмети, цілі, місії, навігація хаба        | ⬜     |
 | 07   | [step_07_media_branding.md](step_07_media_branding.md)         | Іконка застосунку, splash, SFX-пак, BGM хаба, вага APK       | ⬜     |
 | 08   | [step_08_tests_ci_stabilization.md](step_08_tests_ci_stabilization.md) | Діагностика зависаючих widget-тестів, стабілізація CI        | ⬜     |

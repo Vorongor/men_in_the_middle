@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
+import '../theme/app_colors.dart';
+import '../theme/app_text_styles.dart';
 
 enum AppSnackKind { success, error, info }
 
@@ -7,6 +9,7 @@ void showAppSnack(
   BuildContext context,
   String message, {
   AppSnackKind kind = AppSnackKind.info,
+  SnackBarAction? action,
 }) {
   final scaffoldMessenger = ScaffoldMessenger.of(context);
 
@@ -17,16 +20,16 @@ void showAppSnack(
   Color textColor;
   switch (kind) {
     case AppSnackKind.success:
-      bgColor = const Color(0xFF0C160C);
-      textColor = Colors.greenAccent;
+      bgColor = AppColors.surfaceSuccess;
+      textColor = AppColors.primary;
       break;
     case AppSnackKind.error:
-      bgColor = const Color(0xFF240C0C);
-      textColor = Colors.redAccent;
+      bgColor = AppColors.surfaceError;
+      textColor = AppColors.alert;
       break;
     case AppSnackKind.info:
-      bgColor = const Color(0xFF0D0D0D);
-      textColor = Colors.white70;
+      bgColor = AppColors.surface;
+      textColor = AppColors.text;
       break;
   }
 
@@ -37,14 +40,10 @@ void showAppSnack(
       backgroundColor: bgColor,
       duration: const Duration(seconds: 2),
       dismissDirection: DismissDirection.down,
+      action: action,
       content: Text(
         message,
-        style: GoogleFonts.shareTechMono(
-          color: textColor,
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 1.0,
-        ),
+        style: AppTextStyles.snackMessage(color: textColor),
       ),
     ),
   );

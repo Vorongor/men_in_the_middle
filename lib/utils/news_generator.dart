@@ -9,6 +9,7 @@ class NewsGenerator {
   const NewsGenerator._();
 
   static NewsArticle articleFor(AttackHistoryEntry entry) => NewsArticle(
+        id: 'log_${entry.id}',
         title: _headline(entry),
         category: entry.missionName.toUpperCase(),
         time: _formatTime(entry.createdAt),

@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../state/player_session.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_text_styles.dart';
 import '../utils/app_logger.dart';
 import '../utils/constants.dart';
 import '../utils/routes.dart';
@@ -44,7 +47,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           .login(_pseudoCtrl.text.trim(), _passCtrl.text);
       if (!mounted) return;
       if (ok) {
-        // BGM deliberately keeps playing into the hub — see AudioService.
         unawaited(nav.pushReplacementNamed(Routes.homePage));
       } else {
         _showError(AppErrors.wrongCredentials);
@@ -77,6 +79,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.bg,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -89,14 +92,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   _InputField(controller: _pseudoCtrl, label: 'Pseudo'),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppSpacing.lg),
                   _InputField(controller: _passCtrl, label: 'Pass', obscure: true),
                   const SizedBox(height: 40),
                   _ActionButton(
                     label: 'Enter',
                     onTap: _loading ? null : _onEnter,
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: AppSpacing.xl),
                   _ActionButton(
                     label: 'First In',
                     onTap: _loading ? null : _onFirstIn,
@@ -127,16 +130,9 @@ class _InputField extends StatelessWidget {
     return TextField(
       controller: controller,
       obscureText: obscure,
-      style: const TextStyle(color: Colors.white),
+      style: AppTextStyles.body(color: AppColors.text),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(color: Colors.white70),
-        enabledBorder: const OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.white38),
-        ),
-        focusedBorder: const OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.white, width: 1.5),
-        ),
       ),
     );
   }
@@ -158,9 +154,17 @@ class _ActionButton extends StatelessWidget {
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.primary,
           side: const BorderSide(color: AppColors.primary, width: 1.5),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+          ),
         ),
-        child: Text(label, style: const TextStyle(fontSize: 20, letterSpacing: 2)),
+        child: Text(
+          label,
+          style: AppTextStyles.button(color: AppColors.primary).copyWith(
+            fontSize: 20,
+            letterSpacing: 2,
+          ),
+        ),
       ),
     );
   }

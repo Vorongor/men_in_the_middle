@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../models/active_contract.dart';
 import '../models/economy_tuning.dart';
@@ -9,6 +8,9 @@ import '../repos/catalog_repository.dart';
 import '../repos/inventory_repository.dart';
 import '../repos/target_repository.dart';
 import '../state/player_session.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_text_styles.dart';
 import '../utils/app_logger.dart';
 import '../utils/async_value_ext.dart';
 import '../utils/route_args.dart';
@@ -142,11 +144,11 @@ class _TargetBoardScreenState extends ConsumerState<TargetBoardScreen> {
   Color _getDiffColor(String diff) {
     switch (diff) {
       case 'LOW':
-        return Colors.greenAccent;
+        return AppColors.primary;
       case 'MEDIUM':
-        return Colors.orangeAccent;
+        return AppColors.warning;
       default:
-        return Colors.redAccent;
+        return AppColors.alert;
     }
   }
 
@@ -156,13 +158,13 @@ class _TargetBoardScreenState extends ConsumerState<TargetBoardScreen> {
     final profile = sessionState.valueOrNull?.profile;
 
     if (profile == null) {
-      return const GameScaffold(
+      return GameScaffold(
         screenNum: '5.1',
         screenName: 'TARGET BOARD',
         body: Center(
           child: Text(
             'Not authenticated',
-            style: TextStyle(color: Colors.white60),
+            style: AppTextStyles.body(color: AppColors.textMuted),
           ),
         ),
       );
@@ -180,14 +182,13 @@ class _TargetBoardScreenState extends ConsumerState<TargetBoardScreen> {
               children: [
                 const Icon(
                   Icons.local_fire_department,
-                  color: Colors.redAccent,
+                  color: AppColors.alert,
                   size: 48,
                 ),
                 const SizedBox(height: 16),
                 Text(
                   'TOO HOT. LAY LOW.',
-                  style: GoogleFonts.cinzel(
-                    color: Colors.redAccent,
+                  style: AppTextStyles.sectionLabel(color: AppColors.alert).copyWith(
                     fontSize: 16,
                     letterSpacing: 2,
                   ),
@@ -197,8 +198,7 @@ class _TargetBoardScreenState extends ConsumerState<TargetBoardScreen> {
                 Text(
                   'Wanted is maxed out — every eye in the sector is on you. '
                   'The board is locked until you scrub your traces.',
-                  style: GoogleFonts.shareTechMono(
-                    color: Colors.white38,
+                  style: AppTextStyles.body(color: AppColors.textMuted).copyWith(
                     fontSize: 12,
                   ),
                   textAlign: TextAlign.center,
@@ -211,16 +211,16 @@ class _TargetBoardScreenState extends ConsumerState<TargetBoardScreen> {
                         ? null
                         : () => _startCleanup(profile.id!),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.greenAccent,
-                      disabledForegroundColor: Colors.white24,
-                      side: const BorderSide(color: Color(0xFF1E351E)),
+                      foregroundColor: AppColors.primary,
+                      disabledForegroundColor: AppColors.iconLow,
+                      side: const BorderSide(color: AppColors.borderSuccess),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
                     child: Text(
                       _startingCleanup
                           ? 'DISPATCHING...'
                           : 'INITIATE CLEAN UP TRACES',
-                      style: GoogleFonts.cinzel(
+                      style: AppTextStyles.button().copyWith(
                         fontSize: 12,
                         letterSpacing: 1.5,
                       ),
@@ -272,12 +272,12 @@ class _TargetBoardScreenState extends ConsumerState<TargetBoardScreen> {
         Expanded(
           child: activeContractsAsync.when(
             loading: () => const Center(
-              child: CircularProgressIndicator(color: Colors.green),
+              child: CircularProgressIndicator(),
             ),
             error: (err, _) => Center(
               child: Text(
                 'Error loading targets: $err',
-                style: const TextStyle(color: Colors.redAccent),
+                style: AppTextStyles.body(color: AppColors.alert),
               ),
             ),
             data: (contracts) {
@@ -288,26 +288,23 @@ class _TargetBoardScreenState extends ConsumerState<TargetBoardScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.wifi_off,
-                          color: Colors.white12,
+                          color: AppColors.iconLow,
                           size: 48,
                         ),
                         const SizedBox(height: 16),
                         Text(
                           'NO WIRELESS NETWORKS DETECTED',
-                          style: GoogleFonts.shareTechMono(
-                            color: Colors.white38,
+                          style: AppTextStyles.dataMono(color: AppColors.textMuted).copyWith(
                             fontSize: 14,
-                            fontWeight: FontWeight.bold,
                           ),
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 8),
                         Text(
                           'Scan database is empty. Force a network scan below to request fresh targets.',
-                          style: GoogleFonts.shareTechMono(
-                            color: Colors.white24,
+                          style: AppTextStyles.body(color: AppColors.textMuted).copyWith(
                             fontSize: 12,
                           ),
                           textAlign: TextAlign.center,
@@ -341,7 +338,7 @@ class _TargetBoardScreenState extends ConsumerState<TargetBoardScreen> {
                       ),
                       decoration: const BoxDecoration(
                         border: Border(
-                          bottom: BorderSide(color: Color(0xFF111111)),
+                          bottom: BorderSide(color: AppColors.divider),
                         ),
                       ),
                       child: Row(
@@ -351,18 +348,16 @@ class _TargetBoardScreenState extends ConsumerState<TargetBoardScreen> {
                             height: 32,
                             alignment: Alignment.center,
                             decoration: BoxDecoration(
-                              color: const Color(0xFF0C160C),
-                              borderRadius: BorderRadius.circular(4),
+                              color: AppColors.surfaceSuccess,
+                              borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
                               border: Border.all(
-                                color: const Color(0xFF1E351E),
+                                color: AppColors.borderSuccess,
                               ),
                             ),
                             child: Text(
                               '${i + 1}',
-                              style: GoogleFonts.shareTechMono(
-                                color: Colors.greenAccent,
+                              style: AppTextStyles.dataMono(color: AppColors.primary).copyWith(
                                 fontSize: 12,
-                                fontWeight: FontWeight.bold,
                               ),
                             ),
                           ),
@@ -373,20 +368,14 @@ class _TargetBoardScreenState extends ConsumerState<TargetBoardScreen> {
                               children: [
                                 Text(
                                   c.targetName,
-                                  style: GoogleFonts.shareTechMono(
-                                    color: Colors.white,
+                                  style: AppTextStyles.dataMono(color: AppColors.text).copyWith(
                                     fontSize: 14,
-                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
                                   '${c.missionName.toUpperCase()}  ·  BOUNTY: ${c.eptsReward} EPTS',
-                                  style: GoogleFonts.shareTechMono(
-                                    color: Colors.white30,
-                                    fontSize: 11,
-                                    letterSpacing: 1,
-                                  ),
+                                  style: AppTextStyles.caption(color: AppColors.textMuted),
                                 ),
                               ],
                             ),
@@ -397,31 +386,26 @@ class _TargetBoardScreenState extends ConsumerState<TargetBoardScreen> {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: _getDiffColor(
-                                diff,
-                              ).withValues(alpha: 0.08),
+                              color: _getDiffColor(diff).withValues(alpha: 0.08),
                               border: Border.all(
-                                color: _getDiffColor(
-                                  diff,
-                                ).withValues(alpha: 0.3),
+                                color: _getDiffColor(diff).withValues(alpha: 0.3),
                                 width: 1,
                               ),
-                              borderRadius: BorderRadius.circular(2),
+                              borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
                             ),
                             child: Text(
                               diff,
-                              style: GoogleFonts.shareTechMono(
-                                color: _getDiffColor(diff),
-                                fontSize: 9,
+                              style: AppTextStyles.caption(color: _getDiffColor(diff)).copyWith(
                                 fontWeight: FontWeight.bold,
+                                fontSize: 11,
                                 letterSpacing: 1,
                               ),
                             ),
                           ),
                           const SizedBox(width: 12),
-                          const Icon(
+                          Icon(
                             Icons.chevron_right,
-                            color: Colors.white10,
+                            color: AppColors.iconLow,
                             size: 16,
                           ),
                         ],
@@ -436,8 +420,8 @@ class _TargetBoardScreenState extends ConsumerState<TargetBoardScreen> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: const BoxDecoration(
-            border: Border(top: BorderSide(color: Color(0xFF111111))),
-            color: Color(0xFF070707),
+            border: Border(top: BorderSide(color: AppColors.border)),
+            color: AppColors.surface,
           ),
           child: SizedBox(
             width: double.infinity,
@@ -451,18 +435,18 @@ class _TargetBoardScreenState extends ConsumerState<TargetBoardScreen> {
                     },
               style: OutlinedButton.styleFrom(
                 backgroundColor: (activeContractsAsync.valueOrNull ?? const []).isEmpty || profile.eptsBalance >= tuning.boardRefreshFee
-                    ? const Color(0xFF0C160C)
+                    ? AppColors.surfaceSuccess
                     : Colors.transparent,
-                foregroundColor: Colors.greenAccent,
-                disabledForegroundColor: Colors.white24,
+                foregroundColor: AppColors.primary,
+                disabledForegroundColor: AppColors.iconLow,
                 side: BorderSide(
                   color: (activeContractsAsync.valueOrNull ?? const []).isEmpty || profile.eptsBalance >= tuning.boardRefreshFee
-                      ? Colors.greenAccent
-                      : const Color(0xFF222222),
+                      ? AppColors.primary
+                      : AppColors.border,
                 ),
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
                 ),
               ),
               child: Text(
@@ -471,9 +455,8 @@ class _TargetBoardScreenState extends ConsumerState<TargetBoardScreen> {
                     : (activeContractsAsync.valueOrNull ?? const []).isEmpty
                         ? 'EMERGENCY SCAN  ·  FREE'
                         : 'REFRESH WIRELESS SCAN  ·  ${tuning.boardRefreshFee} EPTS',
-                style: GoogleFonts.shareTechMono(
+                style: AppTextStyles.button().copyWith(
                   fontSize: 12,
-                  fontWeight: FontWeight.bold,
                   letterSpacing: 1.5,
                 ),
               ),

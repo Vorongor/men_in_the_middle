@@ -1,7 +1,10 @@
 import 'package:flame_audio/flame_audio.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import '../services/settings_service.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_text_styles.dart';
 import '../utils/constants.dart';
 import '../widgets/video_bg.dart';
 
@@ -42,6 +45,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.bg,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -55,9 +59,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 children: [
                   Text(
                     'Settings',
-                    style: GoogleFonts.cinzel(
+                    style: AppTextStyles.displayTitle(color: AppColors.primary).copyWith(
                       fontSize: 28,
-                      color: AppColors.primary,
                       letterSpacing: 3,
                     ),
                   ),
@@ -73,13 +76,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     value: _general,
                     onChanged: (v) => setState(() => _general = v),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppSpacing.lg),
                   _VolumeSlider(
                     label: 'Music',
                     value: _music,
                     onChanged: (v) => setState(() => _music = v),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppSpacing.lg),
                   _VolumeSlider(
                     label: 'Effects',
                     value: _effects,
@@ -118,14 +121,17 @@ class _ToggleButton extends StatelessWidget {
               onPressed: onTap,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.background,
+                foregroundColor: AppColors.bg,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
                 ),
               ),
               child: Text(
                 label,
-                style: const TextStyle(fontSize: 18, letterSpacing: 2),
+                style: AppTextStyles.button(color: AppColors.bg).copyWith(
+                  fontSize: 18,
+                  letterSpacing: 2,
+                ),
               ),
             )
           : OutlinedButton(
@@ -134,12 +140,15 @@ class _ToggleButton extends StatelessWidget {
                 foregroundColor: AppColors.primary,
                 side: const BorderSide(color: AppColors.primary, width: 1.5),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
                 ),
               ),
               child: Text(
                 label,
-                style: const TextStyle(fontSize: 18, letterSpacing: 2),
+                style: AppTextStyles.button(color: AppColors.primary).copyWith(
+                  fontSize: 18,
+                  letterSpacing: 2,
+                ),
               ),
             ),
     );
@@ -165,7 +174,7 @@ class _VolumeSlider extends StatelessWidget {
           width: 70,
           child: Text(
             label,
-            style: const TextStyle(color: Colors.white70, fontSize: 14),
+            style: AppTextStyles.body(color: AppColors.textHigh),
           ),
         ),
         Expanded(
@@ -174,15 +183,15 @@ class _VolumeSlider extends StatelessWidget {
             min: 0,
             max: 1,
             onChanged: onChanged,
-            activeColor: Colors.white,
-            inactiveColor: Colors.white24,
+            activeColor: AppColors.primary,
+            inactiveColor: AppColors.secondary,
           ),
         ),
         SizedBox(
           width: 36,
           child: Text(
             '${(value * 100).round()}%',
-            style: const TextStyle(color: Colors.white54, fontSize: 12),
+            style: AppTextStyles.caption(color: AppColors.textMuted),
             textAlign: TextAlign.right,
           ),
         ),
@@ -207,11 +216,16 @@ class _MenuButton extends StatelessWidget {
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.primary,
           side: const BorderSide(color: AppColors.primary, width: 1.5),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+          ),
         ),
         child: Text(
           label,
-          style: const TextStyle(fontSize: 20, letterSpacing: 2),
+          style: AppTextStyles.button(color: AppColors.primary).copyWith(
+            fontSize: 20,
+            letterSpacing: 2,
+          ),
         ),
       ),
     );

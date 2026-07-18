@@ -1,29 +1,34 @@
 [
   {
+    "id": "megacorp_servers_breached",
     "title": "MegaCorp Servers Breached",
     "category": "Corporate",
     "time": "2 hours ago",
     "body": "An unknown faction has successfully exfiltrated an estimated 4.7 TB of proprietary data from MegaCorp's primary server cluster located in Sector 3. The breach lasted approximately 6 hours before detection. MegaCorp security teams are investigating. Estimated losses: 2.3 billion credits. No arrests reported at this time."
   },
   {
+    "id": "new_exploit_zeroday_dropped",
     "title": "New Exploit Zero-Day Dropped",
     "category": "Security",
     "time": "1 day ago",
     "body": "A critical zero-day vulnerability affecting GlobalShield Firewall v9.x has been anonymously disclosed on DarkNet forums. The exploit allows remote code execution with root privileges through a crafted packet sequence. Vendors have been notified. Patch timeline: 72 hours. All agents are advised to update defensive configurations."
   },
   {
+    "id": "agent_captured_in_sector_7",
     "title": "Agent Captured in Sector 7",
     "category": "Operations",
     "time": "3 days ago",
     "body": "A mid-tier operative known as \"Glitch\" has reportedly been detained by Sector 7 enforcement units following a failed infiltration of the Regional Power Grid. The agent's tools have been seized. Associates are urged to purge shared keysets. This is the third capture this month in Sector 7."
   },
   {
+    "id": "black_market_prices_surge",
     "title": "Black Market Prices Surge",
     "category": "Economy",
     "time": "5 days ago",
     "body": "Following a series of supply disruptions and faction conflicts, exploit prices on major dark markets have spiked 40% week-over-week. Hardware module costs are up 25%. Analysts expect prices to stabilize within 2 weeks once new supply chains are established through the Northern Corridor."
   },
   {
+    "id": "new_firewall_tech_released",
     "title": "New Firewall Tech Released",
     "category": "Technology",
     "time": "1 week ago",

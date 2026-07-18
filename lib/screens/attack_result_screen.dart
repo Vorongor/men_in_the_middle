@@ -2,11 +2,13 @@ import 'dart:async' show unawaited;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../game/resolution/attack_models.dart';
 import '../services/audio_service.dart';
 import '../state/attack_session.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_text_styles.dart';
 import '../utils/constants.dart';
 import '../utils/routes.dart';
 import '../widgets/game_scaffold.dart';
@@ -25,10 +27,6 @@ class _AttackResultScreenState extends ConsumerState<AttackResultScreen> {
   @override
   void initState() {
     super.initState();
-    // Fire-and-guard: applyAndRefreshSession() no-ops on a second call, but
-    // we still only want to kick it off once per screen instance.
-    // Win/lose SFX for the minigame itself are SnifferGame's job (Step 08);
-    // this only covers the one event with no other trigger point — ranking up.
     _applyFuture = ref
         .read(attackSessionProvider.notifier)
         .applyAndRefreshSession()
@@ -63,7 +61,7 @@ class _AttackResultScreenState extends ConsumerState<AttackResultScreen> {
             screenName: 'ATTACK RESULT',
             showHomeButton: false,
             hideBackButton: true,
-            body: Center(child: CircularProgressIndicator(color: Colors.green)),
+            body: Center(child: CircularProgressIndicator()),
           );
         }
 
@@ -79,9 +77,9 @@ class _AttackResultScreenState extends ConsumerState<AttackResultScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
+                  Text(
                     'No attack result to show.',
-                    style: TextStyle(color: Colors.white38),
+                    style: AppTextStyles.body(color: AppColors.textMuted),
                   ),
                   const SizedBox(height: 16),
                   OutlinedButton(
@@ -102,13 +100,13 @@ class _AttackResultScreenState extends ConsumerState<AttackResultScreen> {
           AttackResultKind.fail =>
             isHoneypot ? 'IT WAS A TRAP' : 'OPERATION FAILED',
         };
-        final accent = isSuccess ? Colors.greenAccent : Colors.redAccent;
+        final accent = isSuccess ? AppColors.primary : AppColors.alert;
         final boxColor = isSuccess
-            ? const Color(0xFF0A1A0A)
-            : const Color(0xFF1A0A0A);
+            ? AppColors.surfaceSuccess
+            : AppColors.surfaceError;
         final borderColor = isSuccess
-            ? const Color(0xFF1A3A1A)
-            : const Color(0xFF3A1A1A);
+            ? AppColors.borderSuccess
+            : AppColors.alert.withValues(alpha: 0.3);
 
         final leveledUp = session.applyResult?.leveledUp ?? false;
         final newLevelName = session.applyResult?.newLevelName;
@@ -166,7 +164,7 @@ class _AttackResultScreenState extends ConsumerState<AttackResultScreen> {
             decoration: BoxDecoration(
               color: boxColor,
               border: Border.all(color: borderColor),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
             ),
             child: Column(
               children: [
@@ -180,8 +178,7 @@ class _AttackResultScreenState extends ConsumerState<AttackResultScreen> {
                 const SizedBox(height: 12),
                 Text(
                   headline,
-                  style: GoogleFonts.cinzel(
-                    color: accent,
+                  style: AppTextStyles.sectionLabel(color: accent).copyWith(
                     fontSize: 16,
                     letterSpacing: 2,
                   ),
@@ -191,13 +188,12 @@ class _AttackResultScreenState extends ConsumerState<AttackResultScreen> {
           ),
           if (isHoneypot) ...[
             const SizedBox(height: 12),
-            const Text(
+            Text(
               'That contract was bait — a honeypot planted while your '
               'heat was running high. No amount of preparation would '
               'have saved this one.',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white38,
+              style: AppTextStyles.body(color: AppColors.textMuted).copyWith(
                 fontSize: 12,
                 height: 1.5,
               ),
@@ -207,15 +203,14 @@ class _AttackResultScreenState extends ConsumerState<AttackResultScreen> {
             const SizedBox(height: 12),
             Text(
               'RANK UP: ${newLevelName ?? '?'}',
-              style: GoogleFonts.cinzel(
-                color: Colors.amberAccent,
+              style: AppTextStyles.sectionLabel(color: AppColors.warning).copyWith(
                 fontSize: 13,
                 letterSpacing: 1.5,
               ),
             ),
           ],
           const SizedBox(height: 24),
-          const Divider(color: Color(0xFF1A1A1A)),
+          const Divider(),
           const SizedBox(height: 16),
           _ResultRow('Credits', _signed(resolution.eptsDelta), suffix: ' EPTS'),
           _ResultRow('XP Gained', _signed(resolution.expDelta)),
@@ -227,7 +222,7 @@ class _AttackResultScreenState extends ConsumerState<AttackResultScreen> {
               (d) => Text(
                 d,
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.amberAccent, fontSize: 12),
+                style: AppTextStyles.body(color: AppColors.warning).copyWith(fontSize: 12),
               ),
             ),
           ],
@@ -237,13 +232,13 @@ class _AttackResultScreenState extends ConsumerState<AttackResultScreen> {
             child: OutlinedButton(
               onPressed: () => _leave(Routes.targetBoard),
               style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.white70,
-                side: const BorderSide(color: Color(0xFF333333)),
+                foregroundColor: AppColors.textHigh,
+                side: const BorderSide(color: AppColors.border),
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
               child: Text(
                 'BACK TO TARGETS',
-                style: GoogleFonts.cinzel(fontSize: 12, letterSpacing: 2),
+                style: AppTextStyles.button(color: AppColors.textHigh).copyWith(fontSize: 12, letterSpacing: 2),
               ),
             ),
           ),
@@ -253,13 +248,13 @@ class _AttackResultScreenState extends ConsumerState<AttackResultScreen> {
             child: OutlinedButton(
               onPressed: () => _leave(Routes.homePage),
               style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.white38,
-                side: const BorderSide(color: Color(0xFF222222)),
+                foregroundColor: AppColors.textMuted,
+                side: const BorderSide(color: AppColors.border),
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
               child: Text(
                 'HOME',
-                style: GoogleFonts.cinzel(fontSize: 12, letterSpacing: 2),
+                style: AppTextStyles.button(color: AppColors.textMuted).copyWith(fontSize: 12, letterSpacing: 2),
               ),
             ),
           ),
@@ -290,15 +285,13 @@ class _ResultRow extends StatelessWidget {
             width: 140,
             child: Text(
               label,
-              style: const TextStyle(color: Colors.white38, fontSize: 13),
+              style: AppTextStyles.body(color: AppColors.textMuted),
             ),
           ),
           Text(
             '$value$suffix',
-            style: TextStyle(
-              color: positive ? Colors.greenAccent : Colors.white54,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
+            style: AppTextStyles.dataMono(
+              color: positive ? AppColors.primary : AppColors.textHigh,
             ),
           ),
         ],

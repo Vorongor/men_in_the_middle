@@ -2,13 +2,15 @@ import 'dart:async' show unawaited;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../models/hardware_item.dart';
 import '../models/user_hardware.dart';
 import '../repos/inventory_repository.dart';
 import '../services/audio_service.dart';
 import '../state/player_session.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_text_styles.dart';
 import '../utils/app_logger.dart';
 import '../utils/async_value_ext.dart';
 import '../utils/constants.dart';
@@ -121,7 +123,10 @@ class _MarketItemScreenState extends ConsumerState<MarketItemScreen> {
           screenNum: '8.2',
           screenName: 'MARKET ITEM',
           body: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.xxl,
+              vertical: AppSpacing.xl,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -132,15 +137,15 @@ class _MarketItemScreenState extends ConsumerState<MarketItemScreen> {
                       height: 48,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: isLocked ? const Color(0xFF160A0A) : const Color(0xFF0C160C),
-                        borderRadius: BorderRadius.circular(8),
+                        color: isLocked ? AppColors.surfaceError : AppColors.surfaceSuccess,
+                        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
                         border: Border.all(
-                          color: isLocked ? const Color(0xFF2D1414) : const Color(0xFF1E351E),
+                          color: isLocked ? AppColors.alert.withValues(alpha: 0.3) : AppColors.borderSuccess,
                         ),
                       ),
                       child: Icon(
                         isLocked ? Icons.lock_outline : Icons.dns,
-                        color: isLocked ? Colors.redAccent : Colors.greenAccent,
+                        color: isLocked ? AppColors.alert : AppColors.primary,
                         size: 20,
                       ),
                     ),
@@ -151,49 +156,38 @@ class _MarketItemScreenState extends ConsumerState<MarketItemScreen> {
                         children: [
                           Text(
                             item.name,
-                            style: GoogleFonts.shareTechMono(
-                              color: Colors.white,
+                            style: AppTextStyles.dataMono(color: AppColors.text).copyWith(
                               fontSize: 16,
-                              fontWeight: FontWeight.bold,
                             ),
                           ),
                           Text(
                             'HARDWARE CLASS: ${item.hwType}',
-                            style: GoogleFonts.shareTechMono(
-                              color: Colors.white38,
-                              fontSize: 12,
-                            ),
+                            style: AppTextStyles.caption(color: AppColors.textMuted),
                           ),
                         ],
                       ),
                     ),
                     Text(
                       '$effectivePrice epts',
-                      style: GoogleFonts.shareTechMono(
-                        color: Colors.greenAccent,
+                      style: AppTextStyles.dataMono(color: AppColors.primary).copyWith(
                         fontSize: 18,
-                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ],
                 ),
-                const Divider(color: Color(0xFF111111), height: 32),
+                const Divider(height: 32),
                 Text(
                   item.description,
-                  style: GoogleFonts.shareTechMono(
-                    color: Colors.white70,
-                    fontSize: 13,
+                  style: AppTextStyles.body(color: AppColors.textHigh).copyWith(
                     height: 1.6,
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: AppSpacing.xxl),
 
                 // Specifications Section
                 Text(
                   'SYSTEM PARAMETERS',
-                  style: GoogleFonts.shareTechMono(
-                    color: Colors.white30,
-                    fontSize: 11,
+                  style: AppTextStyles.caption(color: AppColors.textMuted).copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -208,28 +202,28 @@ class _MarketItemScreenState extends ConsumerState<MarketItemScreen> {
                   child: OutlinedButton(
                     onPressed: canBuy ? () => _handleBuy(profile.id!, item) : null,
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.greenAccent,
-                      disabledForegroundColor: Colors.white24,
+                      foregroundColor: AppColors.primary,
+                      disabledForegroundColor: AppColors.textMuted,
                       side: BorderSide(
-                        color: canBuy ? Colors.greenAccent : const Color(0xFF222222),
+                        color: canBuy ? AppColors.primary : AppColors.border,
                       ),
-                      backgroundColor: canBuy ? const Color(0xFF0C160C) : Colors.transparent,
+                      backgroundColor: canBuy ? AppColors.surfaceSuccess : Colors.transparent,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(4),
+                        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
                       ),
                     ),
                     child: Text(
                       buttonText,
-                      style: GoogleFonts.shareTechMono(
+                      style: AppTextStyles.button(
+                        color: canBuy ? AppColors.primary : AppColors.textMuted,
+                      ).copyWith(
                         fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.5,
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.md),
               ],
             ),
           ),
@@ -253,16 +247,12 @@ class _StatRow extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: GoogleFonts.shareTechMono(color: Colors.white38, fontSize: 12),
+              style: AppTextStyles.body(color: AppColors.textMuted).copyWith(fontSize: 12),
             ),
           ),
           Text(
             value,
-            style: GoogleFonts.shareTechMono(
-              color: Colors.white70,
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-            ),
+            style: AppTextStyles.dataMono(color: AppColors.textHigh),
           ),
         ],
       ),

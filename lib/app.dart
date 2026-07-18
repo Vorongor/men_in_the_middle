@@ -20,6 +20,7 @@ import 'screens/target_board_screen.dart';
 import 'screens/target_detail_screen.dart';
 import 'screens/workshop_item_screen.dart';
 import 'screens/workshop_screen.dart';
+import 'theme/app_theme.dart';
 import 'utils/routes.dart';
 
 class App extends StatelessWidget {
@@ -30,7 +31,7 @@ class App extends StatelessWidget {
     return MaterialApp(
       title: 'The MiddleMen',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark(),
+      theme: AppTheme.dark(),
       initialRoute: Routes.home,
       routes: {
         // Pre-game

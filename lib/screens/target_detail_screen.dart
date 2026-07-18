@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../models/active_contract.dart';
 import '../models/user_software.dart';
 import '../repos/inventory_repository.dart';
 import '../repos/target_repository.dart';
 import '../state/player_session.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_text_styles.dart';
 import '../utils/async_value_ext.dart';
 import '../utils/route_args.dart';
 import '../utils/routes.dart';
@@ -53,19 +55,29 @@ class _TargetDetailScreenState extends ConsumerState<TargetDetailScreen> {
   Widget build(BuildContext context) {
     final args = ModalRoute.of(context)!.settings.arguments as TargetDetailArgs?;
     if (args == null) {
-      return const GameScaffold(
+      return GameScaffold(
         screenNum: '5.2',
         screenName: 'TARGET DETAIL',
-        body: Center(child: Text('Invalid route arguments')),
+        body: Center(
+          child: Text(
+            'Invalid route arguments',
+            style: AppTextStyles.body(color: AppColors.alert),
+          ),
+        ),
       );
     }
 
     final profile = ref.watch(playerSessionProvider).valueOrNull?.profile;
     if (profile == null) {
-      return const GameScaffold(
+      return GameScaffold(
         screenNum: '5.2',
         screenName: 'TARGET DETAIL',
-        body: Center(child: Text('Not authenticated')),
+        body: Center(
+          child: Text(
+            'Not authenticated',
+            style: AppTextStyles.body(color: AppColors.textMuted),
+          ),
+        ),
       );
     }
 
@@ -76,7 +88,7 @@ class _TargetDetailScreenState extends ConsumerState<TargetDetailScreen> {
           return const GameScaffold(
             screenNum: '5.2',
             screenName: 'TARGET DETAIL',
-            body: Center(child: CircularProgressIndicator(color: Colors.green)),
+            body: Center(child: CircularProgressIndicator()),
           );
         }
 
@@ -87,7 +99,7 @@ class _TargetDetailScreenState extends ConsumerState<TargetDetailScreen> {
             body: Center(
               child: Text(
                 'Failed to load target details',
-                style: GoogleFonts.shareTechMono(color: Colors.redAccent),
+                style: AppTextStyles.body(color: AppColors.alert),
               ),
             ),
           );
@@ -121,11 +133,11 @@ class _TargetDetailScreenState extends ConsumerState<TargetDetailScreen> {
                       height: 44,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF0C160C),
+                        color: AppColors.surfaceSuccess,
                         borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: const Color(0xFF1E351E)),
+                        border: Border.all(color: AppColors.borderSuccess),
                       ),
-                      child: const Icon(Icons.radar, color: Colors.greenAccent, size: 22),
+                      child: const Icon(Icons.radar, color: AppColors.primary, size: 22),
                     ),
                     const SizedBox(width: 14),
                     Expanded(
@@ -134,38 +146,38 @@ class _TargetDetailScreenState extends ConsumerState<TargetDetailScreen> {
                         children: [
                           Text(
                             c.targetName,
-                            style: GoogleFonts.shareTechMono(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                            style: AppTextStyles.dataMono(color: AppColors.text).copyWith(fontSize: 16),
                           ),
                           Text(
                             'NODE ID: #${c.id.toString().padLeft(4, '0')}  ·  ${c.targetTypeName.toUpperCase()}',
-                            style: GoogleFonts.shareTechMono(color: Colors.white30, fontSize: 11, letterSpacing: 1),
+                            style: AppTextStyles.caption(color: AppColors.textMuted),
                           ),
                         ],
                       ),
                     ),
                   ],
                 ),
-                const Divider(color: Color(0xFF111111), height: 32),
+                const Divider(height: 32),
                 
                 Text(
                   'MISSION CLASSIFICATION',
-                  style: GoogleFonts.shareTechMono(color: Colors.white30, fontSize: 11, fontWeight: FontWeight.bold),
+                  style: AppTextStyles.caption(color: AppColors.textMuted).copyWith(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 6),
                 Text(
                   c.missionName.toUpperCase(),
-                  style: GoogleFonts.shareTechMono(color: Colors.greenAccent, fontSize: 14, fontWeight: FontWeight.bold),
+                  style: AppTextStyles.dataMono(color: AppColors.primary).copyWith(fontSize: 14),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   c.missionDescription,
-                  style: GoogleFonts.shareTechMono(color: Colors.white70, fontSize: 13, height: 1.5),
+                  style: AppTextStyles.body(color: AppColors.textHigh).copyWith(height: 1.5),
                 ),
                 const SizedBox(height: 20),
 
                 Text(
                   'TARGET PROFILE SPECTRAL PARAMETERS',
-                  style: GoogleFonts.shareTechMono(color: Colors.white30, fontSize: 11, fontWeight: FontWeight.bold),
+                  style: AppTextStyles.caption(color: AppColors.textMuted).copyWith(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
 
@@ -183,21 +195,21 @@ class _TargetDetailScreenState extends ConsumerState<TargetDetailScreen> {
                 const SizedBox(height: 20),
                 Text(
                   'RECOMMENDED ATTACK WEAPONRY',
-                  style: GoogleFonts.shareTechMono(color: Colors.white30, fontSize: 11, fontWeight: FontWeight.bold),
+                  style: AppTextStyles.caption(color: AppColors.textMuted).copyWith(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF070707),
-                    border: Border.all(color: const Color(0xFF111111)),
-                    borderRadius: BorderRadius.circular(4),
+                    color: AppColors.surface,
+                    border: Border.all(color: AppColors.border),
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
                   ),
                   child: Row(
                     children: [
                       Icon(
                         hasRecommendedSoft ? Icons.check_circle : Icons.warning_amber,
-                        color: hasRecommendedSoft ? Colors.greenAccent : Colors.amberAccent,
+                        color: hasRecommendedSoft ? AppColors.primary : AppColors.warning,
                         size: 20,
                       ),
                       const SizedBox(width: 12),
@@ -207,22 +219,20 @@ class _TargetDetailScreenState extends ConsumerState<TargetDetailScreen> {
                           children: [
                             Text(
                               '${softwareTypeName(c.missionPrimarySoftTypeId).toUpperCase()} UTILITY',
-                              style: GoogleFonts.shareTechMono(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                              style: AppTextStyles.dataMono(color: AppColors.text),
                             ),
                             Text(
                               'Effectiveness: +100% Damage (x2 Mult) against node structure.',
-                              style: GoogleFonts.shareTechMono(color: Colors.white30, fontSize: 11),
+                              style: AppTextStyles.caption(color: AppColors.textMuted),
                             ),
                           ],
                         ),
                       ),
                       Text(
                         hasRecommendedSoft ? 'READY' : 'STORE LACK',
-                        style: GoogleFonts.shareTechMono(
-                          color: hasRecommendedSoft ? Colors.greenAccent : Colors.amberAccent,
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: AppTextStyles.caption(
+                          color: hasRecommendedSoft ? AppColors.primary : AppColors.warning,
+                        ).copyWith(fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
@@ -240,18 +250,20 @@ class _TargetDetailScreenState extends ConsumerState<TargetDetailScreen> {
                               arguments: AttackPrepArgs(contractId: c.id),
                             ),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.greenAccent,
-                      disabledForegroundColor: Colors.white24,
+                      foregroundColor: AppColors.primary,
+                      disabledForegroundColor: AppColors.iconLow,
                       side: BorderSide(
-                        color: levelLocked ? const Color(0xFF222222) : Colors.greenAccent,
+                        color: levelLocked ? AppColors.border : AppColors.primary,
                       ),
-                      backgroundColor: levelLocked ? Colors.transparent : const Color(0xFF0C160C),
+                      backgroundColor: levelLocked ? Colors.transparent : AppColors.surfaceSuccess,
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.radiusMd)),
                     ),
                     child: Text(
                       buttonText,
-                      style: GoogleFonts.shareTechMono(fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 1.5),
+                      style: AppTextStyles.button(
+                        color: levelLocked ? AppColors.iconLow : AppColors.primary,
+                      ).copyWith(fontSize: 13, letterSpacing: 1.5),
                     ),
                   ),
                 ),
@@ -280,11 +292,11 @@ class _DetailStatRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Color valColor = Colors.white70;
+    Color valColor = AppColors.textHigh;
     if (highlight) {
-      valColor = Colors.greenAccent;
+      valColor = AppColors.primary;
     } else if (warning) {
-      valColor = Colors.redAccent;
+      valColor = AppColors.alert;
     }
 
     return Padding(
@@ -294,16 +306,12 @@ class _DetailStatRow extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: GoogleFonts.shareTechMono(color: Colors.white38, fontSize: 12),
+              style: AppTextStyles.body(color: AppColors.textMuted),
             ),
           ),
           Text(
             value,
-            style: GoogleFonts.shareTechMono(
-              color: valColor,
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-            ),
+            style: AppTextStyles.dataMono(color: valColor),
           ),
         ],
       ),

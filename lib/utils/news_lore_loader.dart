@@ -14,6 +14,7 @@ Future<List<NewsArticle>> loadNewsLore() async {
   final list = (jsonDecode(raw) as List<dynamic>).cast<Map<String, dynamic>>();
   return list
       .map((m) => NewsArticle(
+            id: m['id'] as String,
             title: m['title'] as String,
             category: m['category'] as String,
             time: m['time'] as String,

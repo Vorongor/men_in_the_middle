@@ -57,3 +57,8 @@ flutter:
     - assets/images/ui/
     - assets/audio/
     - assets/fonts/
+
+  fonts:
+    - family: GeistPixel
+      fonts:
+        - asset: assets/fonts/GeistPixel-Regular-VariableFont_ELSH.ttf

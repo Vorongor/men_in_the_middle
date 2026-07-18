@@ -2,7 +2,6 @@ import 'dart:async' show unawaited;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../models/economy_tuning.dart';
 import '../models/hardware_item.dart';
@@ -13,6 +12,9 @@ import '../repos/catalog_repository.dart';
 import '../repos/inventory_repository.dart';
 import '../services/audio_service.dart';
 import '../state/player_session.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_text_styles.dart';
 import '../utils/app_logger.dart';
 import '../utils/async_value_ext.dart';
 import '../utils/constants.dart';
@@ -138,28 +140,28 @@ class _WorkshopItemScreenState extends ConsumerState<WorkshopItemScreen> {
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF0A0A0A),
+        backgroundColor: AppColors.bg,
         title: Text(
           'CONFIRM TRANSACTION',
-          style: GoogleFonts.shareTechMono(color: Colors.white, fontWeight: FontWeight.bold),
+          style: AppTextStyles.dataMono(color: AppColors.text).copyWith(fontSize: 16),
         ),
         content: Text(
           isLastHardware
               ? 'WARNING: This is your last hardware module. Selling it will reduce your compute power to 0, which severely limits your attack capabilities. Are you sure you want to sell it for $sellPrice EPTS?'
               : 'Are you sure you want to sell this module for $sellPrice EPTS?',
-          style: GoogleFonts.shareTechMono(color: Colors.white70),
+          style: AppTextStyles.body(color: AppColors.textHigh),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('CANCEL', style: GoogleFonts.shareTechMono(color: Colors.white38)),
+            child: Text('CANCEL', style: AppTextStyles.button(color: AppColors.textMuted)),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
               _handleSell(profileId, type, id);
             },
-            child: Text('SELL', style: GoogleFonts.shareTechMono(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+            child: Text('SELL', style: AppTextStyles.button(color: AppColors.alert)),
           ),
         ],
       ),
@@ -200,12 +202,14 @@ class _WorkshopItemScreenState extends ConsumerState<WorkshopItemScreen> {
       loading: () => const GameScaffold(
         screenNum: '9.2',
         screenName: 'WORKSHOP ITEM',
-        body: Center(child: CircularProgressIndicator(color: Colors.green)),
+        body: Center(child: CircularProgressIndicator()),
       ),
       error: (err, stack) => GameScaffold(
         screenNum: '9.2',
         screenName: 'WORKSHOP ITEM',
-        body: Center(child: Text('Error: $err', style: const TextStyle(color: Colors.red))),
+        body: Center(
+          child: Text('Error: $err', style: AppTextStyles.body(color: AppColors.alert)),
+        ),
       ),
       data: (data) {
         if (args.itemType == 'software') {
@@ -265,7 +269,10 @@ class _WorkshopItemScreenState extends ConsumerState<WorkshopItemScreen> {
       screenNum: '9.2',
       screenName: 'WORKSHOP SOFTWARE',
       body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.xxl,
+          vertical: AppSpacing.xl,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -276,11 +283,11 @@ class _WorkshopItemScreenState extends ConsumerState<WorkshopItemScreen> {
                   height: 48,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0C160C),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFF1E351E)),
+                    color: AppColors.surfaceSuccess,
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                    border: Border.all(color: AppColors.borderSuccess),
                   ),
-                  child: const Icon(Icons.terminal, color: Colors.greenAccent, size: 20),
+                  child: const Icon(Icons.terminal, color: AppColors.primary, size: 20),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -289,27 +296,35 @@ class _WorkshopItemScreenState extends ConsumerState<WorkshopItemScreen> {
                     children: [
                       Text(
                         cat.name,
-                        style: GoogleFonts.shareTechMono(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                        style: AppTextStyles.dataMono(color: AppColors.text).copyWith(
+                          fontSize: 16,
+                        ),
                       ),
                       Text(
                         'SOFTWARE  ·  LEVEL $currentLvl/$maxLvl',
-                        style: GoogleFonts.shareTechMono(color: Colors.amberAccent, fontSize: 12, fontWeight: FontWeight.bold),
+                        style: AppTextStyles.caption(color: AppColors.warning).copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                   ),
                 ),
               ],
             ),
-            const Divider(color: Color(0xFF111111), height: 32),
+            const Divider(height: 32),
             Text(
               cat.description,
-              style: GoogleFonts.shareTechMono(color: Colors.white70, fontSize: 13, height: 1.6),
+              style: AppTextStyles.body(color: AppColors.textHigh).copyWith(
+                height: 1.6,
+              ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.xxl),
             
             Text(
               'PERFORMANCE CHARACTERISTICS',
-              style: GoogleFonts.shareTechMono(color: Colors.white30, fontSize: 11, fontWeight: FontWeight.bold),
+              style: AppTextStyles.caption(color: AppColors.textMuted).copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 8),
 
@@ -351,16 +366,18 @@ class _WorkshopItemScreenState extends ConsumerState<WorkshopItemScreen> {
                             _showSellConfirmation(context, profileId, 'software', us.id!, sellPrice, false);
                           },
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.redAccent,
-                      disabledForegroundColor: Colors.white24,
-                      side: const BorderSide(color: Color(0xFF331111)),
-                      backgroundColor: const Color(0xFF1A0C0C),
+                      foregroundColor: AppColors.alert,
+                      disabledForegroundColor: AppColors.textMuted,
+                      side: BorderSide(color: AppColors.alert.withValues(alpha: 0.3)),
+                      backgroundColor: AppColors.surfaceError,
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                      ),
                     ),
                     child: Text(
                       'SELL · +$sellPrice',
-                      style: GoogleFonts.shareTechMono(fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 1.5),
+                      style: AppTextStyles.button(color: AppColors.alert).copyWith(fontSize: 13),
                     ),
                   ),
                 ),
@@ -369,24 +386,30 @@ class _WorkshopItemScreenState extends ConsumerState<WorkshopItemScreen> {
                   child: OutlinedButton(
                     onPressed: canUpgrade ? () => _handleUpgrade(profileId, 'software', us.id!) : null,
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.greenAccent,
-                      disabledForegroundColor: Colors.white24,
+                      foregroundColor: AppColors.primary,
+                      disabledForegroundColor: AppColors.textMuted,
                       side: BorderSide(
-                        color: canUpgrade ? Colors.greenAccent : const Color(0xFF222222),
+                        color: canUpgrade ? AppColors.primary : AppColors.border,
                       ),
-                      backgroundColor: canUpgrade ? const Color(0xFF0C160C) : Colors.transparent,
+                      backgroundColor: canUpgrade ? AppColors.surfaceSuccess : Colors.transparent,
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                      ),
                     ),
                     child: Text(
                       buttonText,
-                      style: GoogleFonts.shareTechMono(fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 1.5),
+                      style: AppTextStyles.button(
+                        color: canUpgrade ? AppColors.primary : AppColors.textMuted,
+                      ).copyWith(
+                        fontSize: 13,
+                      ),
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
           ],
         ),
       ),
@@ -432,7 +455,10 @@ class _WorkshopItemScreenState extends ConsumerState<WorkshopItemScreen> {
       screenNum: '9.2',
       screenName: 'WORKSHOP HARDWARE',
       body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.xxl,
+          vertical: AppSpacing.xl,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -443,11 +469,11 @@ class _WorkshopItemScreenState extends ConsumerState<WorkshopItemScreen> {
                   height: 48,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0C160C),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFF1E351E)),
+                    color: AppColors.surfaceSuccess,
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                    border: Border.all(color: AppColors.borderSuccess),
                   ),
-                  child: const Icon(Icons.dns, color: Colors.greenAccent, size: 20),
+                  child: const Icon(Icons.dns, color: AppColors.primary, size: 20),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -456,27 +482,35 @@ class _WorkshopItemScreenState extends ConsumerState<WorkshopItemScreen> {
                     children: [
                       Text(
                         cat.name,
-                        style: GoogleFonts.shareTechMono(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                        style: AppTextStyles.dataMono(color: AppColors.text).copyWith(
+                          fontSize: 16,
+                        ),
                       ),
                       Text(
                         'HARDWARE MODULE  ·  LEVEL $currentLvl/$maxLvl',
-                        style: GoogleFonts.shareTechMono(color: Colors.amberAccent, fontSize: 12, fontWeight: FontWeight.bold),
+                        style: AppTextStyles.caption(color: AppColors.warning).copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                   ),
                 ),
               ],
             ),
-            const Divider(color: Color(0xFF111111), height: 32),
+            const Divider(height: 32),
             Text(
               cat.description,
-              style: GoogleFonts.shareTechMono(color: Colors.white70, fontSize: 13, height: 1.6),
+              style: AppTextStyles.body(color: AppColors.textHigh).copyWith(
+                height: 1.6,
+              ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.xxl),
 
             Text(
               'PERFORMANCE CHARACTERISTICS',
-              style: GoogleFonts.shareTechMono(color: Colors.white30, fontSize: 11, fontWeight: FontWeight.bold),
+              style: AppTextStyles.caption(color: AppColors.textMuted).copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 8),
 
@@ -502,16 +536,18 @@ class _WorkshopItemScreenState extends ConsumerState<WorkshopItemScreen> {
                         ? null
                         : () => _showSellConfirmation(context, profileId, 'hardware', uh.id!, sellPrice, totalOwned <= 1),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.redAccent,
-                      disabledForegroundColor: Colors.white24,
-                      side: const BorderSide(color: Color(0xFF331111)),
-                      backgroundColor: const Color(0xFF1A0C0C),
+                      foregroundColor: AppColors.alert,
+                      disabledForegroundColor: AppColors.textMuted,
+                      side: BorderSide(color: AppColors.alert.withValues(alpha: 0.3)),
+                      backgroundColor: AppColors.surfaceError,
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                      ),
                     ),
                     child: Text(
                       'SELL · +$sellPrice',
-                      style: GoogleFonts.shareTechMono(fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 1.5),
+                      style: AppTextStyles.button(color: AppColors.alert).copyWith(fontSize: 13),
                     ),
                   ),
                 ),
@@ -520,24 +556,30 @@ class _WorkshopItemScreenState extends ConsumerState<WorkshopItemScreen> {
                   child: OutlinedButton(
                     onPressed: canUpgrade ? () => _handleUpgrade(profileId, 'hardware', uh.id!) : null,
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.greenAccent,
-                      disabledForegroundColor: Colors.white24,
+                      foregroundColor: AppColors.primary,
+                      disabledForegroundColor: AppColors.textMuted,
                       side: BorderSide(
-                        color: canUpgrade ? Colors.greenAccent : const Color(0xFF222222),
+                        color: canUpgrade ? AppColors.primary : AppColors.border,
                       ),
-                      backgroundColor: canUpgrade ? const Color(0xFF0C160C) : Colors.transparent,
+                      backgroundColor: canUpgrade ? AppColors.surfaceSuccess : Colors.transparent,
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                      ),
                     ),
                     child: Text(
                       buttonText,
-                      style: GoogleFonts.shareTechMono(fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 1.5),
+                      style: AppTextStyles.button(
+                        color: canUpgrade ? AppColors.primary : AppColors.textMuted,
+                      ).copyWith(
+                        fontSize: 13,
+                      ),
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
           ],
         ),
       ),
@@ -567,13 +609,13 @@ class _UpgradeStatRow extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: GoogleFonts.shareTechMono(color: Colors.white38, fontSize: 12),
+              style: AppTextStyles.body(color: AppColors.textMuted).copyWith(fontSize: 12),
             ),
           ),
           if (next == null)
             Text(
               current,
-              style: GoogleFonts.shareTechMono(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.bold),
+              style: AppTextStyles.dataMono(color: AppColors.textHigh),
             )
           else
             Row(
@@ -581,20 +623,22 @@ class _UpgradeStatRow extends StatelessWidget {
               children: [
                 Text(
                   current,
-                  style: GoogleFonts.shareTechMono(color: Colors.white38, fontSize: 13),
+                  style: AppTextStyles.body(color: AppColors.textMuted),
                 ),
                 const SizedBox(width: 8),
-                const Icon(Icons.arrow_forward, color: Colors.white24, size: 12),
+                Icon(Icons.arrow_forward, color: AppColors.iconLow, size: 12),
                 const SizedBox(width: 8),
                 Text(
                   next!,
-                  style: GoogleFonts.shareTechMono(color: Colors.greenAccent, fontSize: 13, fontWeight: FontWeight.bold),
+                  style: AppTextStyles.dataMono(color: AppColors.primary),
                 ),
                 if (delta != null) ...[
                   const SizedBox(width: 6),
                   Text(
                     '($delta)',
-                    style: GoogleFonts.shareTechMono(color: Colors.greenAccent, fontSize: 11, fontWeight: FontWeight.w500),
+                    style: AppTextStyles.caption(color: AppColors.primary).copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ]
               ],

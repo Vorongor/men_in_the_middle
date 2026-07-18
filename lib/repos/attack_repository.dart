@@ -23,6 +23,7 @@ class AttackApplyResult {
 /// One row of a player's attack history, joined with readable target/mission
 /// names — backs the Profile screen's "Recent Operations" section.
 class AttackHistoryEntry {
+  final int id;
   final String targetName;
   final String missionName;
   final String result;
@@ -32,6 +33,7 @@ class AttackHistoryEntry {
   final String createdAt;
 
   const AttackHistoryEntry({
+    required this.id,
     required this.targetName,
     required this.missionName,
     required this.result,
@@ -133,7 +135,7 @@ class AttackRepository {
   Future<List<AttackHistoryEntry>> recentAttacks(int profileId, {int limit = 5}) async {
     final d = await _db.db;
     final rows = await d.rawQuery('''
-      SELECT al.result, al.epts_delta, al.wanted_delta, al.trust_delta, al.created_at,
+      SELECT al.id, al.result, al.epts_delta, al.wanted_delta, al.trust_delta, al.created_at,
              tt.name AS target_name, mt.name AS mission_name
       FROM attack_log al
       JOIN target_templates tt ON al.target_template_id = tt.id
@@ -145,6 +147,7 @@ class AttackRepository {
 
     return rows
         .map((r) => AttackHistoryEntry(
+              id: r['id'] as int,
               targetName: r['target_name'] as String,
               missionName: r['mission_name'] as String,
               result: r['result'] as String,

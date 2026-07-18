@@ -46,6 +46,8 @@ void main() {
           filePath = 'assets/data/catalog/level_curve.json';
         } else if (key.contains('legends.json')) {
           filePath = 'assets/data/legends.json';
+        } else if (key.contains('economy.json')) {
+          filePath = 'assets/data/catalog/economy.json';
         }
 
         if (filePath.isNotEmpty && File(filePath).existsSync()) {

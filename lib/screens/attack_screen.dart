@@ -4,13 +4,15 @@ import 'package:flame/game.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../game/resolution/attack_models.dart';
 import '../game/resolution/resolution_engine.dart';
 import '../game/sniffer/sniffer_config.dart';
 import '../game/sniffer/sniffer_game.dart';
 import '../state/attack_session.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_text_styles.dart';
 import '../utils/route_args.dart';
 import '../utils/routes.dart';
 import '../widgets/game_scaffold.dart';
@@ -47,28 +49,28 @@ class _AttackScreenState extends ConsumerState<AttackScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF0D0D0D),
+        backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(4),
-          side: const BorderSide(color: Color(0xFF2A2A2A)),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          side: const BorderSide(color: AppColors.border),
         ),
         title: Text(
           'ABORT ATTACK?',
-          style: GoogleFonts.cinzel(color: Colors.white, fontSize: 14, letterSpacing: 1),
+          style: AppTextStyles.sectionLabel(color: AppColors.text).copyWith(fontSize: 14, letterSpacing: 1),
         ),
-        content: const Text(
+        content: Text(
           'Bailing out now counts as a failed attack — you keep no reward '
           'and still risk being traced.',
-          style: TextStyle(color: Colors.white54, fontSize: 13),
+          style: AppTextStyles.body(color: AppColors.textHigh),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('KEEP GOING', style: TextStyle(color: Colors.white54)),
+            child: Text('KEEP GOING', style: AppTextStyles.button(color: AppColors.textHigh)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('ABORT', style: TextStyle(color: Colors.redAccent)),
+            child: Text('ABORT', style: AppTextStyles.button(color: AppColors.alert)),
           ),
         ],
       ),
@@ -84,14 +86,14 @@ class _AttackScreenState extends ConsumerState<AttackScreen> {
     final setup = ref.watch(attackSessionProvider).setup;
 
     if (setup == null) {
-      return const GameScaffold(
+      return GameScaffold(
         screenNum: '7.2',
         screenName: 'ATTACK',
         showSettings: false,
         body: Center(
           child: Text(
             'No attack in progress. Go back and prepare one first.',
-            style: TextStyle(color: Colors.white38),
+            style: AppTextStyles.body(color: AppColors.textMuted),
           ),
         ),
       );
@@ -116,7 +118,7 @@ class _AttackScreenState extends ConsumerState<AttackScreen> {
         body: Column(
           children: [
             _AttackHeader(setup: setup),
-            const Divider(color: Color(0xFF1A1A1A), height: 1),
+            const Divider(),
             Expanded(
               child: isPhishing
                   ? _SnifferMinigame(
@@ -137,13 +139,13 @@ class _AttackScreenState extends ConsumerState<AttackScreen> {
                 child: OutlinedButton(
                   onPressed: () => _confirmAbort(context),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.white38,
-                    side: const BorderSide(color: Color(0xFF222222)),
+                    foregroundColor: AppColors.textMuted,
+                    side: const BorderSide(color: AppColors.border),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                   child: Text(
                     'ABORT',
-                    style: GoogleFonts.cinzel(fontSize: 11, letterSpacing: 2),
+                    style: AppTextStyles.button(color: AppColors.textMuted).copyWith(fontSize: 11, letterSpacing: 2),
                   ),
                 ),
               ),
@@ -165,7 +167,7 @@ class _AttackHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
       child: Row(
         children: [
-          const Icon(Icons.radar, color: Colors.greenAccent, size: 18),
+          const Icon(Icons.radar, color: AppColors.primary, size: 18),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -173,15 +175,11 @@ class _AttackHeader extends StatelessWidget {
               children: [
                 Text(
                   setup.contract.targetName.toUpperCase(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: AppTextStyles.dataMono(color: AppColors.text),
                 ),
                 Text(
                   setup.contract.missionName.toUpperCase(),
-                  style: const TextStyle(color: Colors.white38, fontSize: 10, letterSpacing: 1),
+                  style: AppTextStyles.caption(color: AppColors.textMuted),
                 ),
               ],
             ),
@@ -298,18 +296,18 @@ class _AutoResolvePanel extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.terminal, color: Colors.white24, size: 40),
+            Icon(Icons.terminal, color: AppColors.iconLow, size: 40),
             const SizedBox(height: 16),
             Text(
               '[ AUTO-RESOLVE ]',
-              style: GoogleFonts.cinzel(color: Colors.white38, fontSize: 13, letterSpacing: 3),
+              style: AppTextStyles.sectionLabel(color: AppColors.textMuted).copyWith(fontSize: 13, letterSpacing: 3),
             ),
             const SizedBox(height: 8),
             Text(
               '${setup.contract.missionName} has no dedicated minigame in this '
               'alpha build — it resolves automatically from your equipped gear.',
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white38, fontSize: 12, height: 1.5),
+              style: AppTextStyles.body(color: AppColors.textMuted).copyWith(fontSize: 12, height: 1.5),
             ),
             const SizedBox(height: 24),
             SizedBox(
@@ -317,13 +315,13 @@ class _AutoResolvePanel extends StatelessWidget {
               child: OutlinedButton(
                 onPressed: () => onResolve(_computeOutcome()),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.greenAccent,
-                  side: const BorderSide(color: Color(0xFF1A3A1A)),
+                  foregroundColor: AppColors.primary,
+                  side: const BorderSide(color: AppColors.borderSuccess),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
                 child: Text(
                   'AUTO-RESOLVE',
-                  style: GoogleFonts.cinzel(fontSize: 12, letterSpacing: 2),
+                  style: AppTextStyles.button(color: AppColors.primary).copyWith(fontSize: 12, letterSpacing: 2),
                 ),
               ),
             ),
@@ -353,12 +351,12 @@ class _DebugOutcomeBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-      color: const Color(0xFF160C0C),
+      color: AppColors.surfaceError,
       child: Column(
         children: [
-          const Text(
+          Text(
             'DEBUG OVERRIDE (kDebugMode)',
-            style: TextStyle(color: Colors.white24, fontSize: 9, letterSpacing: 1),
+            style: AppTextStyles.caption(color: AppColors.iconLow).copyWith(fontSize: 9, letterSpacing: 1),
           ),
           const SizedBox(height: 6),
           Row(
@@ -366,7 +364,7 @@ class _DebugOutcomeBar extends StatelessWidget {
               Expanded(
                 child: _btn(
                   'PERFECT',
-                  Colors.greenAccent,
+                  AppColors.primary,
                   () => onPick(const MinigameOutcome(success: true, timeRatio: 0.85)),
                 ),
               ),
@@ -374,7 +372,7 @@ class _DebugOutcomeBar extends StatelessWidget {
               Expanded(
                 child: _btn(
                   'SLOW',
-                  Colors.orangeAccent,
+                  AppColors.warning,
                   () => onPick(const MinigameOutcome(success: true, timeRatio: 0.2)),
                 ),
               ),
@@ -382,7 +380,7 @@ class _DebugOutcomeBar extends StatelessWidget {
               Expanded(
                 child: _btn(
                   'FAIL',
-                  Colors.redAccent,
+                  AppColors.alert,
                   () => onPick(const MinigameOutcome(success: false, timeRatio: 0.0)),
                 ),
               ),

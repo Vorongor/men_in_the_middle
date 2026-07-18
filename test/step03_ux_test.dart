@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -162,28 +161,23 @@ void main() {
 
     testWidgets('Upgrade keeps the player on the screen and re-renders stats in-place', (tester) async {
       await tester.runAsync(() async {
-        print('--- TEST STEP: start');
         final pseudo = 'upgrade_agent_${Random().nextInt(0x7FFFFFFF)}';
         final awp = await dbHelper.register(pseudo, 'Password123!');
         final profileId = awp.profile.id!;
-        print('--- TEST STEP: register profileId = $profileId');
 
         final db = await dbHelper.db;
 
         // Starter software Phishing Mailer v1, itemId: 1. Let's make sure player has enough epts (e.g. 500 epts)
         await db.update('profiles', {'epts_balance': 500}, where: 'id = ?', whereArgs: [profileId]);
-        print('--- TEST STEP: set balance');
 
         final container = ProviderContainer();
         await container.read(playerSessionProvider.notifier).login(pseudo, 'Password123!');
-        print('--- TEST STEP: login completed');
 
         // Get user software id
         final userSoft = await db.query('user_software', where: 'profile_id = ?', whereArgs: [profileId]);
         final userSoftId = userSoft.first['id'] as int;
 
         final args = WorkshopItemArgs(itemType: 'software', id: userSoftId);
-        print('--- TEST STEP: args prepared = $userSoftId');
 
         // Pump WorkshopItemScreen
         await tester.pumpWidget(
@@ -208,35 +202,27 @@ void main() {
             ),
           ),
         );
-        print('--- TEST STEP: pumpWidget done');
 
         await tester.pump(); // Render loading indicator
-        print('--- TEST STEP: pump 1 done');
         await Future<void>.delayed(const Duration(milliseconds: 300));
         await tester.pump(); // Render item details screen
         // Renders starter specs: LEVEL 1/5
         expect(find.textContaining('LEVEL 1/5'), findsOneWidget);
-        print('--- TEST STEP: LEVEL 1/5 verified');
 
         // Verify the upgrade button is present (UPGRADE · 100 EPTS)
         expect(find.text('UPGRADE · 100 EPTS'), findsOneWidget);
-        print('--- TEST STEP: button verified');
 
         // Tap Upgrade
         await tester.tap(find.text('UPGRADE · 100 EPTS'));
-        print('--- TEST STEP: button tapped');
         await tester.pump(); // Starts upgrade Future
         await Future<void>.delayed(const Duration(milliseconds: 300)); // Finish DB operations & session refresh
         await tester.pump(); // Render screen updates
-        print('--- TEST STEP: final pump done');
 
         expect(find.textContaining('LEVEL 2/5'), findsOneWidget);
         expect(find.text('UPGRADE · 150 EPTS'), findsOneWidget);
-        print('--- TEST STEP: LEVEL 2/5 verified');
 
         // Verify success snackbar shows up
         expect(find.text('UPGRADE COMPLETED SUCCESSFULLY'), findsOneWidget);
-        print('--- TEST STEP: success snackbar verified');
       });
     });
   });

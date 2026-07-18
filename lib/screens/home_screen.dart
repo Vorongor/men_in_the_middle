@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
+
+import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_text_styles.dart';
 import '../utils/constants.dart';
 import '../utils/routes.dart';
 import '../widgets/video_bg.dart';
@@ -11,6 +14,7 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.bg,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -22,9 +26,8 @@ class HomeScreen extends StatelessWidget {
               children: [
                 Text(
                   AppStrings.gameTitle,
-                  style: GoogleFonts.cinzel(
+                  style: AppTextStyles.displayTitle(color: AppColors.primary).copyWith(
                     fontSize: 42,
-                    color: AppColors.primary,
                     letterSpacing: 3,
                   ),
                 ),
@@ -33,12 +36,12 @@ class HomeScreen extends StatelessWidget {
                   label: 'Start',
                   onTap: () => Navigator.pushNamed(context, Routes.login),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: AppSpacing.xl),
                 _MenuButton(
                   label: 'Settings',
                   onTap: () => Navigator.pushNamed(context, Routes.settings),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: AppSpacing.xl),
                 _MenuButton(
                   label: 'Exit',
                   onTap: SystemNavigator.pop,
@@ -70,9 +73,17 @@ class _MenuButton extends StatelessWidget {
           style: OutlinedButton.styleFrom(
             foregroundColor: AppColors.primary,
             side: const BorderSide(color: AppColors.primary, width: 1.5),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+            ),
           ),
-          child: Text(label, style: const TextStyle(fontSize: 20, letterSpacing: 2)),
+          child: Text(
+            label,
+            style: AppTextStyles.button(color: AppColors.primary).copyWith(
+              fontSize: 20,
+              letterSpacing: 2,
+            ),
+          ),
         ),
       ),
     );
