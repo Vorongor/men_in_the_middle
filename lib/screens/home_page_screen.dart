@@ -6,8 +6,10 @@ import '../state/player_session.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
+import '../utils/constants.dart';
 import '../utils/route_args.dart';
 import '../utils/routes.dart';
+import '../widgets/app_icon.dart';
 import '../widgets/game_scaffold.dart';
 import '../widgets/onboarding_banner.dart';
 import 'target_board_screen.dart';
@@ -335,11 +337,13 @@ class _NavIconGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Artwork per docs/planning/icons_map.md. Profile has no bundled icon yet,
+    // so the hub still routes to it through the user card at the top.
     final items = [
-      (Icons.storefront_outlined, 'Store', Routes.store),
-      (Icons.memory_outlined, 'Market', Routes.market),
-      (Icons.build_outlined, 'Workshop', Routes.workshop),
-      (Icons.article_outlined, 'News', Routes.news),
+      (AppImages.navStore, 'Store', Routes.store),
+      (AppImages.navMarket, 'Market', Routes.market),
+      (AppImages.navWorkshop, 'Workshop', Routes.workshop),
+      (AppImages.navNews, 'News', Routes.news),
     ];
 
     return Container(
@@ -353,7 +357,7 @@ class _NavIconGrid extends StatelessWidget {
         children: items
             .map(
               (item) => _NavIcon(
-                icon: item.$1,
+                asset: item.$1,
                 label: item.$2,
                 onTap: () => Navigator.pushNamed(context, item.$3),
               ),
@@ -366,12 +370,12 @@ class _NavIconGrid extends StatelessWidget {
 
 class _NavIcon extends StatelessWidget {
   const _NavIcon({
-    required this.icon,
+    required this.asset,
     required this.label,
     required this.onTap,
   });
 
-  final IconData icon;
+  final String asset;
   final String label;
   final VoidCallback onTap;
 
@@ -383,7 +387,7 @@ class _NavIcon extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: AppColors.textHigh, size: 28),
+          AppImageIcon(asset, size: 36),
           const SizedBox(height: 4),
           Text(
             label,

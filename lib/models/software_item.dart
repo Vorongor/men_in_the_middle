@@ -16,6 +16,10 @@ class SoftwareItem {
   final int sockets;
   final Map<String, dynamic> levelUpStrategy;
 
+  /// Optional catalog icon key resolved by `AppIcon` — see
+  /// docs/design/icon_presets.md. Null falls back to the software glyph.
+  final String? iconKey;
+
   const SoftwareItem({
     this.id,
     required this.name,
@@ -31,6 +35,7 @@ class SoftwareItem {
     required this.baseTrace,
     this.sockets = 1,
     required this.levelUpStrategy,
+    this.iconKey,
   });
 
   Map<String, dynamic> toMap() => {
@@ -48,6 +53,7 @@ class SoftwareItem {
         'base_trace': baseTrace,
         'sockets': sockets,
         'level_up_strategy': jsonEncode(levelUpStrategy),
+        'icon_key': iconKey,
       };
 
   factory SoftwareItem.fromMap(Map<String, dynamic> m) {
@@ -73,6 +79,7 @@ class SoftwareItem {
       baseTrace: m['base_trace'] as int,
       sockets: m['sockets'] as int? ?? 1,
       levelUpStrategy: strategy,
+      iconKey: m['icon_key'] as String?,
     );
   }
 }

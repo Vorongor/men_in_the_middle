@@ -4,6 +4,7 @@ import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart' show Colors, FontWeight, TextStyle;
 
+import '../../theme/app_colors.dart';
 import 'sniffer_game.dart';
 import 'sniffer_paddle.dart';
 
@@ -30,8 +31,8 @@ class Packet extends RectangleComponent
        );
 
   static const _revealAfter = 0.5;
-  static const _green = Color(0xFF39D353);
-  static const _red = Color(0xFFE5484D);
+  static const _green = AppColors.primary;
+  static const _red = AppColors.alert;
 
   static Color _colorFor(PacketKind kind) =>
       kind == PacketKind.green ? _green : _red;

@@ -84,7 +84,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         fit: StackFit.expand,
         children: [
           VideoBg(fallback: AppImages.loginBg),
-          const ColoredBox(color: Color(0xAA000000)),
+          const ColoredBox(color: AppColors.scrimStrong),
           Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 40),

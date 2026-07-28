@@ -189,12 +189,7 @@ class _WorkshopItemScreenState extends ConsumerState<WorkshopItemScreen> {
     }
 
     final tuningAsync = ref.watch(economyTuningProvider);
-    final tuning = tuningAsync.valueOrNull ?? const EconomyTuning(
-      boardRefreshFee: 10,
-      sellRatio: 0.5,
-      contractTtlHours: 24,
-      insuranceMinReward: 10,
-    );
+    final tuning = tuningAsync.valueOrNull ?? EconomyTuning.defaults;
 
     final itemAsync = ref.watch(workshopItemDataProvider(args));
 
@@ -246,15 +241,9 @@ class _WorkshopItemScreenState extends ConsumerState<WorkshopItemScreen> {
     final isAffordable = balance >= cost;
     final canUpgrade = !isMax && isAffordable && !_isUpgrading && !_isSelling;
 
-    // Calculate sell price
-    int upgradesCost = 0;
-    for (int l = 2; l <= currentLvl; l++) {
-      final step = cat.levelUpStrategy[l.toString()] as Map<String, dynamic>?;
-      if (step != null) {
-        upgradesCost += step['cost'] as int? ?? 0;
-      }
-    }
-    final sellPrice = (tuning.sellRatio * (cat.basePrice + upgradesCost)).round();
+    // Same function the sell transaction uses, so the label, the confirmation
+    // dialog and the payout can never disagree.
+    final sellPrice = InventoryRepository.softwareSellPrice(tuning, cat, currentLvl);
 
     String buttonText = 'UPGRADE · $cost EPTS';
     if (isMax) {
@@ -435,12 +424,8 @@ class _WorkshopItemScreenState extends ConsumerState<WorkshopItemScreen> {
     final isAffordable = balance >= cost;
     final canUpgrade = !isMax && isAffordable && !_isUpgrading && !_isSelling;
 
-    // Calculate sell price
-    int upgradesCost = 0;
-    for (int lvl = 1; lvl < currentLvl; lvl++) {
-      upgradesCost += (cat.basePrice * 0.6 * lvl).round();
-    }
-    final sellPrice = (tuning.sellRatio * (cat.basePrice + upgradesCost)).round();
+    // Shared with the sell transaction — see softwareSellPrice above.
+    final sellPrice = InventoryRepository.hardwareSellPrice(tuning, cat, currentLvl);
 
     String buttonText = 'UPGRADE · $cost EPTS';
     if (isMax) {

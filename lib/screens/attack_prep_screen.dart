@@ -1,3 +1,5 @@
+import 'dart:async' show unawaited;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -8,12 +10,14 @@ import '../models/user_software.dart';
 import '../repos/catalog_repository.dart';
 import '../repos/inventory_repository.dart';
 import '../repos/target_repository.dart';
+import '../services/audio_service.dart';
 import '../state/attack_session.dart';
 import '../state/player_session.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../utils/async_value_ext.dart';
+import '../utils/constants.dart';
 import '../utils/route_args.dart';
 import '../utils/routes.dart';
 import '../utils/soft_type_names.dart';
@@ -346,6 +350,9 @@ class _AttackPrepScreenState extends ConsumerState<AttackPrepScreen> {
                 onPressed: setup == null
                     ? null
                     : () {
+                        unawaited(
+                          AudioService.instance.playSfx(AppAudio.sfxButton),
+                        );
                         ref.read(attackSessionProvider.notifier).start(setup);
                         Navigator.pushNamed(
                           context,

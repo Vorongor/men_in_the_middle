@@ -11,6 +11,10 @@ class HardwareItem {
   final int initPowerDraw;
   final int sockets;
 
+  /// Optional catalog icon key resolved by `AppIcon` — see
+  /// docs/design/icon_presets.md. Null falls back to the hardware glyph.
+  final String? iconKey;
+
   const HardwareItem({
     this.id,
     required this.name,
@@ -23,6 +27,7 @@ class HardwareItem {
     required this.initComputePower,
     required this.initPowerDraw,
     this.sockets = 1,
+    this.iconKey,
   });
 
   Map<String, dynamic> toMap() => {
@@ -37,6 +42,7 @@ class HardwareItem {
         'init_compute_power': initComputePower,
         'init_power_draw': initPowerDraw,
         'sockets': sockets,
+        'icon_key': iconKey,
       };
 
   factory HardwareItem.fromMap(Map<String, dynamic> m) => HardwareItem(
@@ -51,5 +57,6 @@ class HardwareItem {
         initComputePower: m['init_compute_power'] as int,
         initPowerDraw: m['init_power_draw'] as int,
         sockets: m['sockets'] as int? ?? 1,
+        iconKey: m['icon_key'] as String?,
       );
 }

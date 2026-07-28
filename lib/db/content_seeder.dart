@@ -6,7 +6,8 @@ import '../utils/content_validator.dart';
 /// Seeds the catalog tables in SQLite database from JSON asset files
 /// when a new database is created or when the content version increases.
 class ContentSeeder {
-  static const currentContentVersion = 2;
+  /// v4 — Balance v2 adjustments based on playtest feedback (step 09).
+  static const currentContentVersion = 4;
 
   static Future<void> seed(Database db) async {
     // 1. Create meta table if not exists (insurance)
@@ -83,6 +84,7 @@ class ContentSeeder {
             'name': raw['name'] as String,
             'base_trace_speed': raw['base_trace_speed'] as int,
             'risk_multiplier': (raw['risk_multiplier'] as num).toDouble(),
+            'icon_key': raw['icon_key'] as String?,
           });
         }
 
@@ -95,6 +97,7 @@ class ContentSeeder {
             'description': raw['description'] as String,
             'primary_soft_type_id': raw['primary_soft_type_id'] as int,
             'base_reward_mult': (raw['base_reward_mult'] as num).toDouble(),
+            'icon_key': raw['icon_key'] as String?,
           });
         }
 
@@ -116,6 +119,7 @@ class ContentSeeder {
             'base_trace': raw['base_trace'] as int,
             'sockets': raw['sockets'] as int? ?? 1,
             'level_up_strategy': jsonEncode(raw['level_up_strategy']),
+            'icon_key': raw['icon_key'] as String?,
           });
         }
 
@@ -134,6 +138,7 @@ class ContentSeeder {
             'init_compute_power': raw['init_compute_power'] as int,
             'init_power_draw': raw['init_power_draw'] as int,
             'sockets': raw['sockets'] as int? ?? 1,
+            'icon_key': raw['icon_key'] as String?,
           });
         }
 

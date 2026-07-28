@@ -13,6 +13,7 @@ import '../utils/async_value_ext.dart';
 import '../utils/route_args.dart';
 import '../utils/routes.dart';
 import '../utils/wanted_effects.dart';
+import '../widgets/app_icon.dart';
 import '../widgets/game_scaffold.dart';
 
 class StoreScreen extends ConsumerStatefulWidget {
@@ -190,11 +191,20 @@ class _StoreRow extends StatelessWidget {
                     color: isLocked ? AppColors.alert.withValues(alpha: 0.2) : AppColors.borderSuccess,
                   ),
                 ),
-                child: Icon(
-                  isLocked ? Icons.lock_outline : Icons.terminal,
-                  color: isLocked ? AppColors.alert : AppColors.primary,
-                  size: 16,
-                ),
+                // A locked item keeps the padlock — the catalog icon only shows
+                // once the item is actually reachable.
+                child: isLocked
+                    ? const Icon(
+                        Icons.lock_outline,
+                        color: AppColors.alert,
+                        size: 16,
+                      )
+                    : AppIcon(
+                        iconKey: item.iconKey,
+                        kind: AppIconKind.software,
+                        size: 16,
+                        color: AppColors.primary,
+                      ),
               ),
               const SizedBox(width: 14),
               Expanded(

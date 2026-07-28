@@ -15,6 +15,8 @@ import 'package:men_in_the_middle/widgets/app_snack.dart';
 import 'package:men_in_the_middle/widgets/game_scaffold.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
+import 'helpers/async_widget_harness.dart';
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   sqfliteFfiInit();
@@ -128,7 +130,9 @@ void main() {
         ),
       );
 
-      expect(find.byIcon(Icons.settings), findsOneWidget);
+      // Matched by tooltip, not by glyph: step 06 swapped the Material icon
+      // for the Setting.png artwork, and the button's identity is its action.
+      expect(find.byTooltip('Settings'), findsOneWidget);
 
       await tester.pumpWidget(
         const ProviderScope(
@@ -143,7 +147,7 @@ void main() {
         ),
       );
 
-      expect(find.byIcon(Icons.settings), findsNothing);
+      expect(find.byTooltip('Settings'), findsNothing);
     });
   });
 
@@ -203,9 +207,7 @@ void main() {
           ),
         );
 
-        await tester.pump(); // Render loading indicator
-        await Future<void>.delayed(const Duration(milliseconds: 300));
-        await tester.pump(); // Render item details screen
+        await settleAsync(tester);
         // Renders starter specs: LEVEL 1/5
         expect(find.textContaining('LEVEL 1/5'), findsOneWidget);
 
@@ -214,9 +216,7 @@ void main() {
 
         // Tap Upgrade
         await tester.tap(find.text('UPGRADE · 100 EPTS'));
-        await tester.pump(); // Starts upgrade Future
-        await Future<void>.delayed(const Duration(milliseconds: 300)); // Finish DB operations & session refresh
-        await tester.pump(); // Render screen updates
+        await settleAsync(tester);
 
         expect(find.textContaining('LEVEL 2/5'), findsOneWidget);
         expect(find.text('UPGRADE · 150 EPTS'), findsOneWidget);

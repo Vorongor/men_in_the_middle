@@ -1,8 +1,8 @@
-import 'dart:convert';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+﻿import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../db/database_helper.dart';
+import '../game/economy/sell_pricing.dart';
 import '../models/economy_tuning.dart';
 import '../models/hardware_item.dart';
 import '../models/software_item.dart';
@@ -399,20 +399,11 @@ class InventoryRepository {
       final catalog = SoftwareItem.fromMap(catalogMaps.first);
 
       // 5. Load Economy Tuning
-      final tuningMaps = await txn.query('meta', where: 'key = ?', whereArgs: ['economy_tuning']);
-      final tuning = tuningMaps.isNotEmpty
-          ? EconomyTuning.fromMap(jsonDecode(tuningMaps.first['value'] as String) as Map<String, dynamic>)
-          : const EconomyTuning(boardRefreshFee: 10, sellRatio: 0.5, contractTtlHours: 24, insuranceMinReward: 10);
+      final tuning = await EconomyTuning.load(txn);
 
-      // 6. Calculate sell price
-      int upgradesCost = 0;
-      for (int l = 2; l <= us.currentLevel; l++) {
-        final step = catalog.levelUpStrategy[l.toString()] as Map<String, dynamic>?;
-        if (step != null) {
-          upgradesCost += step['cost'] as int? ?? 0;
-        }
-      }
-      final sellPrice = (tuning.sellRatio * (catalog.basePrice + upgradesCost)).round();
+      // 6. Calculate sell price (shared with the Workshop screen and the
+      // balance simulator — see softwareSellPrice)
+      final sellPrice = softwareSellPrice(tuning, catalog, us.currentLevel);
 
       // 7. Delete from user_software
       await txn.delete('user_software', where: 'id = ?', whereArgs: [userSoftId]);
@@ -431,6 +422,27 @@ class InventoryRepository {
       return sellPrice;
     });
   }
+
+  // ── Sell pricing ───────────────────────────────────────────────────────────
+  // Pure functions, deliberately static: the sell transaction, the Workshop
+  // screen's "SELL · +N" label, its confirmation dialog and the balance
+  // simulator all price items through these. Previously each had its own copy
+  // of the arithmetic, so the dialog could quote one figure while the
+  // transaction paid out another.
+
+  /// What the player receives for selling owned software.
+  static int softwareSellPrice(
+    EconomyTuning tuning,
+    SoftwareItem catalog,
+    int currentLevel,
+  ) => SellPricing.software(tuning.sellRatio, catalog, currentLevel);
+
+  /// Hardware counterpart of [softwareSellPrice].
+  static int hardwareSellPrice(
+    EconomyTuning tuning,
+    HardwareItem catalog,
+    int currentLevel,
+  ) => SellPricing.hardware(tuning.sellRatio, catalog, currentLevel);
 
   /// Sells a hardware item inside a transaction.
   /// Returns the earned epts amount.
@@ -453,17 +465,10 @@ class InventoryRepository {
       final catalog = HardwareItem.fromMap(catalogMaps.first);
 
       // 4. Load Economy Tuning
-      final tuningMaps = await txn.query('meta', where: 'key = ?', whereArgs: ['economy_tuning']);
-      final tuning = tuningMaps.isNotEmpty
-          ? EconomyTuning.fromMap(jsonDecode(tuningMaps.first['value'] as String) as Map<String, dynamic>)
-          : const EconomyTuning(boardRefreshFee: 10, sellRatio: 0.5, contractTtlHours: 24, insuranceMinReward: 10);
+      final tuning = await EconomyTuning.load(txn);
 
-      // 5. Calculate sell price
-      int upgradesCost = 0;
-      for (int lvl = 1; lvl < uh.currentLevel; lvl++) {
-        upgradesCost += (catalog.basePrice * 0.6 * lvl).round();
-      }
-      final sellPrice = (tuning.sellRatio * (catalog.basePrice + upgradesCost)).round();
+      // 5. Calculate sell price (shared — see hardwareSellPrice)
+      final sellPrice = hardwareSellPrice(tuning, catalog, uh.currentLevel);
 
       // 6. Delete from user_hardware
       await txn.delete('user_hardware', where: 'id = ?', whereArgs: [userHardId]);

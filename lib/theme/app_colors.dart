@@ -56,6 +56,15 @@ abstract final class AppColors {
   /// Success-tinted border used alongside [surfaceSuccess].
   static const Color borderSuccess = Color(0xFF1E351E);
 
+  // ── Scrims (overlays above video/image backgrounds) ───────────────────────
+  /// Standard darkening veil over a background video/image so text stays
+  /// readable. Replaces the inline `Color(0x88000000)` overlays.
+  static const Color scrim = Color(0x88000000);
+
+  /// Heavier veil for screens with dense foreground content (auth forms).
+  /// Replaces the inline `Color(0xAA000000)` overlay.
+  static const Color scrimStrong = Color(0xAA000000);
+
   // ── Text opacity helpers (semantic aliases) ───────────────────────────────
   /// White at 70% — used for AppBar foreground, moderate emphasis text.
   static const Color textHigh = Color(0xFFB3B3B3); // ≈ white70 on black

@@ -17,7 +17,8 @@ class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._();
   DatabaseHelper._();
 
-  static const _dbVersion = 6;
+  /// v7 — added `icon_key` to the four catalog tables (step 06).
+  static const _dbVersion = 7;
 
   String dbName = 'middlemen.db';
   Database? _db;
@@ -130,7 +131,8 @@ class DatabaseHelper {
         id               INTEGER PRIMARY KEY AUTOINCREMENT,
         name             TEXT    NOT NULL UNIQUE,
         base_trace_speed INTEGER NOT NULL CHECK(base_trace_speed >= 1),
-        risk_multiplier  REAL    NOT NULL CHECK(risk_multiplier >= 0)
+        risk_multiplier  REAL    NOT NULL CHECK(risk_multiplier >= 0),
+        icon_key         TEXT
       )
     ''');
 
@@ -140,7 +142,8 @@ class DatabaseHelper {
         name                 TEXT    NOT NULL UNIQUE,
         description          TEXT    NOT NULL,
         primary_soft_type_id INTEGER NOT NULL REFERENCES software_types(id),
-        base_reward_mult     REAL    NOT NULL DEFAULT 1.0 CHECK(base_reward_mult >= 0)
+        base_reward_mult     REAL    NOT NULL DEFAULT 1.0 CHECK(base_reward_mult >= 0),
+        icon_key             TEXT
       )
     ''');
 
@@ -159,7 +162,8 @@ class DatabaseHelper {
         base_penetration  INTEGER NOT NULL CHECK(base_penetration >= 1),
         base_trace        INTEGER NOT NULL CHECK(base_trace >= 0),
         sockets           INTEGER NOT NULL DEFAULT 1 CHECK(sockets >= 1),
-        level_up_strategy TEXT    NOT NULL CHECK(json_valid(level_up_strategy))
+        level_up_strategy TEXT    NOT NULL CHECK(json_valid(level_up_strategy)),
+        icon_key          TEXT
       )
     ''');
 
@@ -175,7 +179,8 @@ class DatabaseHelper {
         req_black_trust    INTEGER NOT NULL DEFAULT 0 CHECK(req_black_trust BETWEEN 0 AND 100),
         init_compute_power INTEGER NOT NULL CHECK(init_compute_power >= 1),
         init_power_draw    INTEGER NOT NULL CHECK(init_power_draw >= 0),
-        sockets            INTEGER NOT NULL DEFAULT 1 CHECK(sockets >= 1)
+        sockets            INTEGER NOT NULL DEFAULT 1 CHECK(sockets >= 1),
+        icon_key           TEXT
       )
     ''');
 

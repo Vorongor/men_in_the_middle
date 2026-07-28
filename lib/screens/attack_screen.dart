@@ -1,3 +1,4 @@
+import 'dart:async' show unawaited;
 import 'dart:math' show pi, sin;
 
 import 'package:flame/game.dart';
@@ -9,10 +10,12 @@ import '../game/resolution/attack_models.dart';
 import '../game/resolution/resolution_engine.dart';
 import '../game/sniffer/sniffer_config.dart';
 import '../game/sniffer/sniffer_game.dart';
+import '../services/audio_service.dart';
 import '../state/attack_session.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
+import '../utils/constants.dart';
 import '../utils/route_args.dart';
 import '../utils/routes.dart';
 import '../widgets/game_scaffold.dart';
@@ -34,6 +37,21 @@ class AttackScreen extends ConsumerStatefulWidget {
 
 class _AttackScreenState extends ConsumerState<AttackScreen> {
   SnifferGame? _snifferGame;
+
+  @override
+  void initState() {
+    super.initState();
+    // The keyboard loop runs for as long as the attack screen is up, whether
+    // it resolves through the minigame or the auto-resolve panel.
+    unawaited(AudioService.instance.startLoopSfx(AppAudio.sfxKeyboardLoop));
+  }
+
+  @override
+  void dispose() {
+    // Covers every exit: finish, abort, and the OS back gesture.
+    unawaited(AudioService.instance.stopLoopSfx());
+    super.dispose();
+  }
 
   void _finish(BuildContext context, MinigameOutcome outcome) {
     final args = ModalRoute.of(context)!.settings.arguments as AttackPrepArgs?;
@@ -246,11 +264,15 @@ class _SnifferMinigameState extends State<_SnifferMinigame>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      _game.resumeEngine();
-    } else {
+    final backgrounded = state != AppLifecycleState.resumed;
+    if (backgrounded) {
       _game.pauseEngine();
+    } else {
+      _game.resumeEngine();
     }
+    // Keep the typing loop in lockstep with the engine, so a backgrounded app
+    // isn't still clattering away.
+    unawaited(AudioService.instance.setLoopPaused(backgrounded));
   }
 
   @override

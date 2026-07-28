@@ -1,5 +1,4 @@
-import 'dart:convert';
-import 'dart:math';
+﻿import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../db/database_helper.dart';
@@ -71,10 +70,7 @@ class TargetRepository {
       final profileId = profile.id!;
 
       // 0. Load Economy Tuning
-      final tuningMaps = await txn.query('meta', where: 'key = ?', whereArgs: ['economy_tuning']);
-      final tuning = tuningMaps.isNotEmpty
-          ? EconomyTuning.fromMap(jsonDecode(tuningMaps.first['value'] as String) as Map<String, dynamic>)
-          : const EconomyTuning(boardRefreshFee: 10, sellRatio: 0.5, contractTtlHours: 24, insuranceMinReward: 10);
+      final tuning = await EconomyTuning.load(txn);
 
       // 1. Pay fee if requested
       if (payFee) {

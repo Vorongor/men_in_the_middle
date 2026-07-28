@@ -19,7 +19,7 @@ class HomeScreen extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           VideoBg(fallback: AppImages.homeBg),
-          const ColoredBox(color: Color(0x88000000)),
+          const ColoredBox(color: AppColors.scrim),
           Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,

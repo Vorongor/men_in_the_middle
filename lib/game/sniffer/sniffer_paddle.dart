@@ -3,6 +3,8 @@ import 'dart:ui';
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 
+import '../../theme/app_colors.dart';
+
 /// The player-controlled "sniffer" at the bottom of the screen. Wider
 /// paddles (driven by [SnifferConfig.paddleWidthFactor], which scales with
 /// software attack) are easier to land catches with.
@@ -14,7 +16,7 @@ class SnifferPaddle extends RectangleComponent with CollisionCallbacks {
         position: position,
         size: Vector2(width, 18),
         anchor: Anchor.center,
-        paint: Paint()..color = const Color(0xFF39D353),
+        paint: Paint()..color = AppColors.primary,
       );
 
   double _minX;

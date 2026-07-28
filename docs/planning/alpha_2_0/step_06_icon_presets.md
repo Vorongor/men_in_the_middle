@@ -1,36 +1,37 @@
-# Крок 06 — Іконки: підключення готових асетів + пайплайн для каталогу
+﻿# Крок 06 — Іконки: підключення готових асетів + пайплайн для каталогу
 
-**Статус: ⬜ не розпочато** · Залежності: крок 05 (палітра Варіант 1 для стилю донабору)
-**Вхідні дані:** [general_alpha_2_0.md](general_alpha_2_0.md) (крок 06), **[incons_map.md](../incons_map.md)** — мапа вже готових асетів, [design_tokens.md](../../design/design_tokens.md) (створюється кроком 05)
+**Статус: 🟡 частково (код готовий, чекає на арт)** · Залежності: крок 05 (палітра Варіант 1 для стилю донабору)
+**Вхідні дані:** [general_alpha_2_0.md](general_alpha_2_0.md) (крок 06), **[icons_map.md](../icons_map.md)** — мапа вже готових асетів, [design_tokens.md](../../design/design_tokens.md) (створюється кроком 05)
 
 ## Мета
 
-Кожен предмет, ціль, місія і розділ хаба має іконку в єдиному стилі. Готові асети з [incons_map.md](../incons_map.md) підключені до екранів; для предметів каталогу працює пайплайн `icon_key` — додавання нового предмета в JSON автоматично підхоплює іконку.
+Кожен предмет, ціль, місія і розділ хаба має іконку в єдиному стилі. Готові асети з [icons_map.md](../icons_map.md) підключені до екранів; для предметів каталогу працює пайплайн `icon_key` — додавання нового предмета в JSON автоматично підхоплює іконку.
 
 ## Контекст (фактичний стан асетів, 2026-07-05)
 
-- **Готово** (плоско в `assets/images/`, змаплено в incons_map.md): `Back_arrow.png` (кнопка «назад» на кожному екрані), `Setting.png` (кнопка налаштувань — синергія з кроком 03), `Darknet.png` (Store), `Spider_store.png` (Market), `Workshop.png`, `News.png`, `Targets_list.png` (фон блоку дошки на хабі), `Target.png` (фон елемента дошки); спрайти `hacker/hacker_green.png` (Screen 1) і `hacker_green_anonimoys.png` (Screen 2); `icons/Info.png` (поза мапою).
+- **Готово** (плоско в `assets/images/`, змаплено в icons_map.md): `Back_arrow.png` (кнопка «назад» на кожному екрані), `Setting.png` (кнопка налаштувань — синергія з кроком 03), `Darknet.png` (Store), `Spider_store.png` (Market), `Workshop.png`, `News.png`, `Targets_list.png` (фон блоку дошки на хабі), `Target.png` (фон елемента дошки); спрайти `hacker/hacker_green.png` (Screen 1) і `hacker_green_anonimoys.png` (Screen 2); `icons/Info.png` (поза мапою).
 - **Прогалина в наборі:** іконки Profile для хаба немає (`Profile.png` видалено при чистці) — хаб навігує 6 розділами, покрито 4 + 2 фони.
 - **Не потрапить у білд:** pubspec декларує лише `backgrounds/`, `characters/`, `ui/` — плоскі `assets/images/*.png`, `hacker/`, `icons/` **не декларовані**, а Flutter не бере asset-теки рекурсивно.
 - **Порожньо:** `assets/images/ui/icons/` (лише .gitkeep) — іконок предметів/типів каталогу ще немає; JSON-каталоги без поля іконки.
 
 ## Задачі
 
-### 6.1 Підключити готові асети (за incons_map.md)
+### 6.1 Підключити готові асети (за icons_map.md)
 
-- [ ] pubspec: додати `assets/images/`, `assets/images/hacker/`, `assets/images/icons/` (узгодити з hotfix-комітом кроку 08, щоб не розійтись у конфліктах).
-- [ ] `GameScaffold`: кнопка Back → `Back_arrow.png`, кнопка Settings (додається кроком 03) → `Setting.png`.
-- [ ] Хаб (Screen 3): іконки розділів — Darknet (Store), Spider_store (Market), Workshop, News; блок Target Board — фон `Targets_list.png`, елементи — `Target.png`.
-- [ ] Screen 1 (меню): спрайт `hacker_green.png`; Screen 2 (auth): `hacker_green_anonimoys.png` — розмістити за макетом власника (не перекривати кнопки на вузьких вікнах — перевірка 240px, практика кроку 01).
-- [ ] Домалювати/підібрати **іконку Profile** у стилі наявного пака (прогалина після видалення Profile.png); додати в мапу.
-- [ ] Перейменувати `docs/planning/incons_map.md` → `icons_map.md` (одруківка) і додати в нього Info.png та Profile; всі посилання оновити.
+- [x] pubspec: додано `assets/images/`, `hacker/`, `icons/`, `ui/icons/` **і** `audio/background_tracks/`, `audio/sound_effects/`. Перевірено на бандлі: раніше в білд не потрапляв жоден із 8 плоских PNG, спрайтів і **16 аудіофайлів** — тепер потрапляють усі.
+- [x] `GameScaffold`: кнопка Back → `Back_arrow.png`, кнопка Settings → `Setting.png`.
+- [x] Хаб (Screen 3): іконки розділів — Darknet (Store), Spider_store (Market), Workshop, News.
+- [ ] Блок Target Board — фон `Targets_list.png`, елементи — `Target.png`. **Чекає на макет власника** (фон під списком — це композиційне рішення, не механічна заміна).
+- [ ] Screen 1 (меню): спрайт `hacker_green.png`; Screen 2 (auth): `hacker_green_anonimoys.png` — **чекає на макет власника** (позиція/розмір; перевірка 240px).
+- [ ] 🔴 Домалювати/підібрати **іконку Profile** — потрібен арт, кодом не закривається.
+- [x] Перейменувати `incons_map.md` → `icons_map.md`; додано Info.png і рядок про прогалину Profile; усі посилання оновлені.
 
 ### 6.2 Пайплайн `icon_key` для каталогу
 
-- [ ] Поле `icon_key` (опційне) у 4 JSON-каталоги; `ContentSeeder` → нова колонка в БД (міграція +1 версія схеми, `ALTER TABLE ... ADD COLUMN icon_key TEXT`); моделі отримують поле.
-- [ ] **Fallback-ланцюжок**: `icon_key` предмета → дефолтна іконка його типу → generic. Відсутній файл не валить UI.
-- [ ] Тест у `content_pipeline_test.dart`: кожен непорожній `icon_key` відповідає файлу в `assets/images/ui/icons/` (биті посилання ловляться на CI).
-- [ ] Віджет `lib/widgets/app_icon.dart`: `AppIcon(iconKey, {size, color})` — шлях, fallback, фарбування токеном (primary/secondary/alert з палітри Варіанта 1).
+- [x] Поле `icon_key` (опційне) у 4 JSON-каталоги; `ContentSeeder` → колонка `icon_key TEXT` у 4 таблицях; моделі отримали поле. `_dbVersion` 6→7, `currentContentVersion` 2→3. **Увага:** `_migrate()` у цьому проєкті — drop-and-recreate усіх таблиць, тож підняття версії **стирає збереження гравця** (задокументовано в icon_presets.md).
+- [x] **Fallback-ланцюжок**: `icon_key` → дефолтний гліф свого типу. Резолв у `Image.errorBuilder`, тож битий ключ деградує до гліфа і не валить UI.
+- [x] Тест у `content_pipeline_test.dart` (група `icon_key pipeline (step 06)`): биті `icon_key` ловляться на CI + round-trip колонки JSON → БД.
+- [x] Віджет `lib/widgets/app_icon.dart`: `AppIcon(iconKey:, kind:, size:, color:)` + `AppImageIcon` для chrome-асетів. Підключено у Store і Market.
 
 ### 6.3 Донабір v1 для предметів каталогу (`assets/images/ui/icons/`)
 
@@ -40,12 +41,12 @@
 
 ### 6.4 Документація
 
-- [ ] `docs/design/icon_presets.md`: зведена мапа «ключ ↔ файл ↔ місце в UI» (готові + донабір), стиль, правила додавання нової іконки.
-- [ ] `CREDITS.md`: джерела графіки (включно зі спрайтами), ліцензії.
+- [x] `docs/design/icon_presets.md`: зведена мапа «ключ ↔ файл ↔ місце в UI», fallback-ланцюжок, правила додавання нової іконки, список із 22 файлів донабору.
+- [x] `CREDITS.md`: заповнено на кроці 07 — уся графіка (включно зі спрайтами) є оригінальним артом дизайнера проєкту, стороннім контентом не є.
 
 ## Критерії приймання
 
-- [ ] Усі позиції incons_map.md реально відображаються у грі (хаб, Back/Settings, спрайти, фони дошки) — ручна перевірка Windows + Android.
+- [ ] Усі позиції icons_map.md реально відображаються у грі (хаб, Back/Settings, спрайти, фони дошки) — ручна перевірка Windows + Android.
 - [ ] Хаб має іконки всіх 6 розділів (включно з новою Profile).
 - [ ] Списки Store/Market/Workshop/Target Board показують іконки предметів/цілей; предмет без `icon_key` отримує іконку типу.
 - [ ] Додавання тестового предмета в JSON лише з `icon_key` — іконка з'явилась без правок Dart-коду.

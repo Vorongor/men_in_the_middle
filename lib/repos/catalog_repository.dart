@@ -1,5 +1,4 @@
-import 'dart:convert';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+﻿import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../db/database_helper.dart';
 import '../models/economy_tuning.dart';
@@ -95,24 +94,8 @@ class CatalogRepository {
   }
 
   /// Fetches the economy tuning configuration from meta.
-  Future<EconomyTuning> fetchEconomyTuning() async {
-    final d = await _db.db;
-    final rows = await d.query(
-      'meta',
-      where: 'key = ?',
-      whereArgs: ['economy_tuning'],
-    );
-    if (rows.isEmpty) {
-      return const EconomyTuning(
-        boardRefreshFee: 10,
-        sellRatio: 0.5,
-        contractTtlHours: 24,
-        insuranceMinReward: 10,
-      );
-    }
-    final raw = rows.first['value'] as String;
-    return EconomyTuning.fromMap(jsonDecode(raw) as Map<String, dynamic>);
-  }
+  Future<EconomyTuning> fetchEconomyTuning() async =>
+      EconomyTuning.load(await _db.db);
 }
 
 // ── Provider ──────────────────────────────────────────────────────────────────

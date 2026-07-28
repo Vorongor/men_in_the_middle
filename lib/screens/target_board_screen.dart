@@ -237,12 +237,7 @@ class _TargetBoardScreenState extends ConsumerState<TargetBoardScreen> {
     final activeContractsAsync = ref.watch(activeContractsProvider);
     final softwarePower = profile.softwarePower;
     final tuningAsync = ref.watch(economyTuningProvider);
-    final tuning = tuningAsync.valueOrNull ?? const EconomyTuning(
-      boardRefreshFee: 10,
-      sellRatio: 0.5,
-      contractTtlHours: 24,
-      insuranceMinReward: 10,
-    );
+    final tuning = tuningAsync.valueOrNull ?? EconomyTuning.defaults;
 
     return GameScaffold(
       screenNum: '5.1',

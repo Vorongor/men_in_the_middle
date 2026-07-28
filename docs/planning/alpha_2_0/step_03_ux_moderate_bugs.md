@@ -1,4 +1,4 @@
-# Крок 03 — Помірні UX-баги: снекбари, Workshop, Settings з гри
+﻿# Крок 03 — Помірні UX-баги: снекбари, Workshop, Settings з гри
 
 **Статус: ✅ виконано** · Залежності: кроки 01–02 (✅) · Баги тест-звіту: **№3, №4, №5 (помірні)**
 **Вхідні дані:** [alpha_1_0_test_summary.md](alpha_1_0_test_summary.md), [general_alpha_2_0.md](general_alpha_2_0.md) (крок 03)
@@ -31,7 +31,7 @@
 
 ### 3.3 Settings зсередини гри (баг №5)
 
-- [ ] Додати кнопку Settings у шапку `GameScaffold` (спільний віджет усіх ігрових екранів — одна зміна дає доступ звідусіль) з `Navigator.pushNamed(Routes.settings)`. Іконка: тимчасово Material ⚙; на кроці 06 замінюється на `assets/images/Setting.png` за [incons_map.md](../incons_map.md) (якщо крок 06 виконується раніше/разом — одразу PNG).
+- [ ] Додати кнопку Settings у шапку `GameScaffold` (спільний віджет усіх ігрових екранів — одна зміна дає доступ звідусіль) з `Navigator.pushNamed(Routes.settings)`. Іконка: тимчасово Material ⚙; на кроці 06 замінюється на `assets/images/Setting.png` за [icons_map.md](../icons_map.md) (якщо крок 06 виконується раніше/разом — одразу PNG).
 - [ ] Виняток: на Screen 7.2 (активна атака) іконку не показувати — вихід з міні-гри йде через наявний ABORT-флоу; параметр `showSettings: false` у GameScaffold.
 - [ ] Перевірити повернення: гучність BGM/SFX застосовується одразу (SettingsScreen уже зберігає на Back), сесія гравця не губиться, стек навігації повертає на той самий екран.
 

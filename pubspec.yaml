@@ -2,7 +2,7 @@ name: men_in_the_middle
 description: "The MiddleMen — a mobile game built with Flutter and Flame."
 publish_to: 'none'
 
-version: 0.2.0-alpha.1+2
+version: 0.3.0-alpha.2+3
 
 environment:
   sdk: ^3.12.2
@@ -48,17 +48,57 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
+  # Flutter does not pick up asset folders recursively — every subfolder that
+  # holds assets must be listed explicitly, otherwise its files never make it
+  # into the build.
   assets:
     - assets/data/
     - assets/data/catalog/
     - assets/media/
+    - assets/images/
     - assets/images/backgrounds/
     - assets/images/characters/
+    - assets/images/hacker/
+    - assets/images/icons/
     - assets/images/ui/
+    - assets/images/ui/icons/
     - assets/audio/
+    - assets/audio/background_tracks/
+    - assets/audio/sound_effects/
     - assets/fonts/
 
   fonts:
     - family: GeistPixel
       fonts:
         - asset: assets/fonts/GeistPixel-Regular-VariableFont_ELSH.ttf
+
+# ── Branding (step 07) ────────────────────────────────────────────────────────
+# Master art lives in assets/branding/ and is NOT bundled as a runtime asset —
+# both tools generate native platform resources from it at build-config time.
+# Regenerate after changing the source art:
+#   dart run flutter_launcher_icons
+#   dart run flutter_native_splash:create
+flutter_launcher_icons:
+  image_path: assets/branding/app_icon.png
+  android: true
+  # Adaptive icon: the launcher mask crops to roughly the centre 66%, so the
+  # foreground art is deliberately drawn smaller than the legacy icon.
+  adaptive_icon_background: "#0A0A0C"
+  adaptive_icon_foreground: assets/branding/app_icon_foreground.png
+  min_sdk_android: 21
+  windows:
+    generate: true
+    image_path: assets/branding/app_icon.png
+    icon_size: 256
+
+flutter_native_splash:
+  color: "#0A0A0C"
+  image: assets/branding/splash_logo.png
+  android: true
+  # No `windows:` key — this version of flutter_native_splash rejects it as
+  # unknown; the Windows runner shows no white flash to fix anyway.
+  android_12:
+    # Android 12+ ignores the legacy splash and draws its own centred icon on
+    # a solid background, so it needs its own entry or the theme colour leaks.
+    color: "#0A0A0C"
+    image: assets/branding/splash_logo.png

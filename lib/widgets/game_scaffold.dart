@@ -6,7 +6,9 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../utils/async_value_ext.dart';
+import '../utils/constants.dart';
 import '../utils/routes.dart';
+import 'app_icon.dart';
 
 class GameScaffold extends ConsumerWidget {
   const GameScaffold({
@@ -36,7 +38,14 @@ class GameScaffold extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: AppColors.surface,
         foregroundColor: AppColors.text,
-        automaticallyImplyLeading: !hideBackButton,
+        automaticallyImplyLeading: false,
+        leading: (!hideBackButton && Navigator.of(context).canPop())
+            ? IconButton(
+                icon: const AppImageIcon(AppImages.backArrow, size: 22),
+                tooltip: 'Back',
+                onPressed: () => Navigator.of(context).maybePop(),
+              )
+            : null,
         centerTitle: true,
         title: Text(
           screenName,
@@ -78,7 +87,7 @@ class GameScaffold extends ConsumerWidget {
             ),
           if (showSettings)
             IconButton(
-              icon: const Icon(Icons.settings, size: 20),
+              icon: const AppImageIcon(AppImages.settings, size: 20),
               tooltip: 'Settings',
               onPressed: () => Navigator.pushNamed(context, Routes.settings),
             ),

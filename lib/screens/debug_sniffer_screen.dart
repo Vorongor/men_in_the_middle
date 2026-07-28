@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../game/resolution/attack_models.dart';
 import '../game/sniffer/sniffer_config.dart';
 import '../game/sniffer/sniffer_game.dart';
+import '../theme/app_colors.dart';
 
 /// `/debug/sniffer` — kDebugMode-only tuning tool.
 ///
@@ -79,7 +80,7 @@ class _DebugSnifferScreenState extends State<DebugSnifferScreen> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0D0D0D),
+        backgroundColor: AppColors.surface,
         title: const Text('DEBUG: SNIFFER TUNING', style: TextStyle(fontSize: 13)),
       ),
       body: ListView(
@@ -159,7 +160,7 @@ class _DebugSnifferPlayScreenState extends State<_DebugSnifferPlayScreen> {
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF0D0D0D),
+        backgroundColor: AppColors.surface,
         title: Text(
           outcome.success ? 'SUCCESS' : 'FAIL',
           style: TextStyle(color: outcome.success ? Colors.greenAccent : Colors.redAccent),

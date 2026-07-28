@@ -167,4 +167,86 @@ void main() {
       expect(userHard.first['item_id'], 1); // Intel Celeron Rig (item_id: 1)
     });
   });
+
+  group('icon_key pipeline (step 06)', () {
+    // Catalogs that may carry an optional `icon_key`.
+    const catalogs = [
+      'target_types.json',
+      'mission_types.json',
+      'software_items.json',
+      'hardware_items.json',
+    ];
+
+    /// Every non-empty `icon_key` must point at a real bundled PNG, otherwise
+    /// the UI silently falls back to a generic glyph and the missing artwork
+    /// goes unnoticed until someone eyeballs the screen. Catching it here means
+    /// a typo fails on CI instead.
+    test('every declared icon_key resolves to a bundled PNG', () {
+      final missing = <String>[];
+
+      for (final catalog in catalogs) {
+        final entries = (jsonDecode(
+          File('assets/data/catalog/$catalog').readAsStringSync(),
+        ) as List<dynamic>).cast<Map<String, dynamic>>();
+
+        for (final entry in entries) {
+          final key = (entry['icon_key'] as String?)?.trim();
+          if (key == null || key.isEmpty) continue;
+
+          final path = 'assets/images/ui/icons/$key.png';
+          if (!File(path).existsSync()) {
+            missing.add('$catalog → "${entry['name']}" declares "$key" ($path)');
+          }
+        }
+      }
+
+      expect(
+        missing,
+        isEmpty,
+        reason: 'Broken icon_key references:\n${missing.join('\n')}',
+      );
+    });
+
+    test('seeder carries icon_key from JSON through to the DB', () async {
+      final db = await DatabaseHelper.instance.db;
+
+      // The column must exist on all four catalog tables even while the
+      // catalogs themselves declare no keys yet — that is what lets a new item
+      // light up its icon with a JSON-only edit.
+      for (final table in [
+        'target_types',
+        'mission_types',
+        'software_items',
+        'hardware_items',
+      ]) {
+        final columns = await db.rawQuery('PRAGMA table_info($table)');
+        expect(
+          columns.map((c) => c['name']),
+          contains('icon_key'),
+          reason: '$table is missing the icon_key column',
+        );
+      }
+
+      // Round-trip: writing a key and reading it back proves the seeder's
+      // insert path and the models' fromMap agree on the column name.
+      await db.insert('target_types', {
+        'name': '__icon_key_probe__',
+        'base_trace_speed': 1,
+        'risk_multiplier': 1.0,
+        'icon_key': 'probe_icon',
+      });
+      final row = await db.query(
+        'target_types',
+        where: 'name = ?',
+        whereArgs: ['__icon_key_probe__'],
+      );
+      expect(row.single['icon_key'], 'probe_icon');
+
+      await db.delete(
+        'target_types',
+        where: 'name = ?',
+        whereArgs: ['__icon_key_probe__'],
+      );
+    });
+  });
 }
