@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../models/account_with_profile.dart';
 import '../state/player_session.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_text_styles.dart';
+import '../utils/constants.dart';
 import '../utils/route_args.dart';
 import '../utils/routes.dart';
+import '../widgets/app_icon.dart';
 import '../widgets/game_scaffold.dart';
 import '../widgets/onboarding_banner.dart';
 import 'target_board_screen.dart';
@@ -19,15 +23,15 @@ class HomePageScreen extends ConsumerWidget {
 
     return session.when(
       loading: () => const Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: AppColors.bg,
         body: Center(child: CircularProgressIndicator()),
       ),
       error: (e, _) => Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: AppColors.bg,
         body: Center(
           child: Text(
             'Session error: $e',
-            style: const TextStyle(color: Colors.red),
+            style: AppTextStyles.body(color: AppColors.alert),
           ),
         ),
       ),
@@ -37,7 +41,7 @@ class HomePageScreen extends ConsumerWidget {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             Navigator.of(context).pushReplacementNamed(Routes.login);
           });
-          return const Scaffold(backgroundColor: Colors.black);
+          return const Scaffold(backgroundColor: AppColors.bg);
         }
         return _HomePageBody(data: awp);
       },
@@ -97,12 +101,12 @@ class _UserInfoCard extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         decoration: const BoxDecoration(
-          color: Color(0xFF111111),
-          border: Border(bottom: BorderSide(color: Color(0xFF222222))),
+          color: AppColors.surface,
+          border: Border(bottom: BorderSide(color: AppColors.border)),
         ),
         child: Row(
           children: [
-            const Icon(Icons.person_outline, color: Colors.white38, size: 36),
+            const Icon(Icons.person_outline, color: AppColors.textMuted, size: 36),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -110,15 +114,13 @@ class _UserInfoCard extends StatelessWidget {
                 children: [
                   Text(
                     a.pseudo,
-                    style: GoogleFonts.cinzel(
-                      color: Colors.white,
-                      fontSize: 14,
+                    style: AppTextStyles.sectionLabel(color: AppColors.text).copyWith(
                       letterSpacing: 1.5,
                     ),
                   ),
                   Text(
                     '${l.name}  ·  Lv.${l.id}',
-                    style: const TextStyle(color: Colors.white38, fontSize: 11),
+                    style: AppTextStyles.caption(color: AppColors.textMuted),
                   ),
                 ],
               ),
@@ -128,16 +130,16 @@ class _UserInfoCard extends StatelessWidget {
               children: [
                 Text(
                   'XP ${p.experience}',
-                  style: const TextStyle(color: Colors.white54, fontSize: 11),
+                  style: AppTextStyles.caption(color: AppColors.textHigh),
                 ),
                 Text(
                   'Rating ${p.rating}',
-                  style: const TextStyle(color: Colors.white54, fontSize: 11),
+                  style: AppTextStyles.caption(color: AppColors.textHigh),
                 ),
               ],
             ),
             const SizedBox(width: 4),
-            const Icon(Icons.chevron_right, color: Colors.white24, size: 16),
+            Icon(Icons.chevron_right, color: AppColors.iconLow, size: 16),
           ],
         ),
       ),
@@ -163,11 +165,11 @@ class _TargetBoardPreview extends ConsumerWidget {
   Color _getDiffColor(String diff) {
     switch (diff) {
       case 'LOW':
-        return Colors.greenAccent;
+        return AppColors.primary;
       case 'MEDIUM':
-        return Colors.orangeAccent;
+        return AppColors.warning;
       default:
-        return Colors.redAccent;
+        return AppColors.alert;
     }
   }
 
@@ -185,36 +187,31 @@ class _TargetBoardPreview extends ConsumerWidget {
             children: [
               Text(
                 'TARGET BOARD PREVIEW',
-                style: GoogleFonts.cinzel(
-                  color: Colors.white54,
+                style: AppTextStyles.sectionLabel(color: AppColors.textMuted).copyWith(
                   fontSize: 11,
-                  letterSpacing: 2,
                 ),
               ),
               const Spacer(),
               GestureDetector(
                 onTap: () => Navigator.pushNamed(context, Routes.targetBoard),
-                child: const Text(
+                child: Text(
                   'View All →',
-                  style: TextStyle(color: Colors.white38, fontSize: 11),
+                  style: AppTextStyles.caption(color: AppColors.textMuted),
                 ),
               ),
             ],
           ),
         ),
-        const Divider(color: Color(0xFF111111), height: 1),
+        const Divider(),
         Expanded(
           child: activeContractsAsync.when(
             loading: () => const Center(
-              child: CircularProgressIndicator(color: Colors.green),
+              child: CircularProgressIndicator(),
             ),
             error: (err, _) => Center(
               child: Text(
                 'Scanner error',
-                style: GoogleFonts.shareTechMono(
-                  color: Colors.redAccent,
-                  fontSize: 12,
-                ),
+                style: AppTextStyles.body(color: AppColors.alert),
               ),
             ),
             data: (contracts) {
@@ -222,10 +219,7 @@ class _TargetBoardPreview extends ConsumerWidget {
                 return Center(
                   child: Text(
                     'NO TARGETS DETECTED IN SCAN RANGE',
-                    style: GoogleFonts.shareTechMono(
-                      color: Colors.white24,
-                      fontSize: 12,
-                    ),
+                    style: AppTextStyles.body(color: AppColors.textMuted),
                   ),
                 );
               }
@@ -255,7 +249,7 @@ class _TargetBoardPreview extends ConsumerWidget {
                       ),
                       decoration: const BoxDecoration(
                         border: Border(
-                          bottom: BorderSide(color: Color(0xFF111111)),
+                          bottom: BorderSide(color: AppColors.divider),
                         ),
                       ),
                       child: Row(
@@ -265,18 +259,16 @@ class _TargetBoardPreview extends ConsumerWidget {
                             height: 28,
                             alignment: Alignment.center,
                             decoration: BoxDecoration(
-                              color: const Color(0xFF0C160C),
-                              borderRadius: BorderRadius.circular(4),
+                              color: AppColors.surfaceSuccess,
+                              borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
                               border: Border.all(
-                                color: const Color(0xFF1E351E),
+                                color: AppColors.borderSuccess,
                               ),
                             ),
                             child: Text(
                               '${i + 1}',
-                              style: GoogleFonts.shareTechMono(
-                                color: Colors.greenAccent,
+                              style: AppTextStyles.dataMono(color: AppColors.primary).copyWith(
                                 fontSize: 11,
-                                fontWeight: FontWeight.bold,
                               ),
                             ),
                           ),
@@ -287,18 +279,11 @@ class _TargetBoardPreview extends ConsumerWidget {
                               children: [
                                 Text(
                                   c.targetName,
-                                  style: GoogleFonts.shareTechMono(
-                                    color: Colors.white,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                                  style: AppTextStyles.dataMono(color: AppColors.text),
                                 ),
                                 Text(
                                   c.missionName.toUpperCase(),
-                                  style: GoogleFonts.shareTechMono(
-                                    color: Colors.white38,
-                                    fontSize: 11,
-                                  ),
+                                  style: AppTextStyles.caption(color: AppColors.textMuted),
                                 ),
                               ],
                             ),
@@ -309,31 +294,26 @@ class _TargetBoardPreview extends ConsumerWidget {
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: _getDiffColor(
-                                diff,
-                              ).withValues(alpha: 0.08),
+                              color: _getDiffColor(diff).withValues(alpha: 0.08),
                               border: Border.all(
-                                color: _getDiffColor(
-                                  diff,
-                                ).withValues(alpha: 0.3),
+                                color: _getDiffColor(diff).withValues(alpha: 0.3),
                                 width: 1,
                               ),
-                              borderRadius: BorderRadius.circular(2),
+                              borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
                             ),
                             child: Text(
                               diff,
-                              style: GoogleFonts.shareTechMono(
-                                color: _getDiffColor(diff),
-                                fontSize: 8,
+                              style: AppTextStyles.caption(color: _getDiffColor(diff)).copyWith(
                                 fontWeight: FontWeight.bold,
+                                fontSize: 11,
                                 letterSpacing: 0.5,
                               ),
                             ),
                           ),
                           const SizedBox(width: 8),
-                          const Icon(
+                          Icon(
                             Icons.chevron_right,
-                            color: Colors.white10,
+                            color: AppColors.iconLow,
                             size: 16,
                           ),
                         ],
@@ -357,15 +337,17 @@ class _NavIconGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Artwork per docs/planning/icons_map.md. Profile has no bundled icon yet,
+    // so the hub still routes to it through the user card at the top.
     final items = [
-      (Icons.storefront_outlined, 'Store', Routes.store),
-      (Icons.memory_outlined, 'Market', Routes.market),
-      (Icons.build_outlined, 'Workshop', Routes.workshop),
-      (Icons.article_outlined, 'News', Routes.news),
+      (AppImages.navStore, 'Store', Routes.store),
+      (AppImages.navMarket, 'Market', Routes.market),
+      (AppImages.navWorkshop, 'Workshop', Routes.workshop),
+      (AppImages.navNews, 'News', Routes.news),
     ];
 
     return Container(
-      color: const Color(0xFF0A0A0A),
+      color: AppColors.bg,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: GridView.count(
         crossAxisCount: 4,
@@ -375,7 +357,7 @@ class _NavIconGrid extends StatelessWidget {
         children: items
             .map(
               (item) => _NavIcon(
-                icon: item.$1,
+                asset: item.$1,
                 label: item.$2,
                 onTap: () => Navigator.pushNamed(context, item.$3),
               ),
@@ -388,12 +370,12 @@ class _NavIconGrid extends StatelessWidget {
 
 class _NavIcon extends StatelessWidget {
   const _NavIcon({
-    required this.icon,
+    required this.asset,
     required this.label,
     required this.onTap,
   });
 
-  final IconData icon;
+  final String asset;
   final String label;
   final VoidCallback onTap;
 
@@ -401,18 +383,19 @@ class _NavIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: Colors.white54, size: 28),
+          AppImageIcon(asset, size: 36),
           const SizedBox(height: 4),
           Text(
             label,
-            style: const TextStyle(color: Colors.white38, fontSize: 10),
+            style: AppTextStyles.caption(color: AppColors.textMuted),
           ),
         ],
       ),
     );
   }
 }
+

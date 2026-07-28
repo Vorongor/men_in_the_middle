@@ -8,6 +8,10 @@ on:
 jobs:
   analyze-and-test:
     runs-on: ubuntu-latest
+    # Insurance against a hung test wedging the runner until GitHub's 6-hour
+    # ceiling. The suite finishes in well under a minute; 20 leaves headroom
+    # for a cold Flutter cache.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 

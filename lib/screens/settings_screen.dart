@@ -1,7 +1,12 @@
-import 'package:flame_audio/flame_audio.dart';
+import 'dart:async' show unawaited;
+
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
+import '../services/audio_service.dart';
 import '../services/settings_service.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_text_styles.dart';
 import '../utils/constants.dart';
 import '../widgets/video_bg.dart';
 
@@ -28,25 +33,40 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _effects = s.effectsVolume;
   }
 
-  Future<void> _onBack() async {
+  /// Pushes the current slider/toggle state into the service and re-applies it
+  /// to everything audible, so changes are heard while the screen is still
+  /// open rather than only after backing out.
+  void _apply() {
     final s = SettingsService.instance;
     s.muteAll = _muteAll;
     s.generalVolume = _general;
     s.musicVolume = _music;
     s.effectsVolume = _effects;
-    await s.save();
-    await FlameAudio.bgm.audioPlayer.setVolume(s.effectiveMusicVolume);
+    unawaited(AudioService.instance.applyVolume());
+  }
+
+  /// The toggle flick, also used to preview the effects level when the player
+  /// releases the Effects slider — that is the only way to actually hear what
+  /// the slider does.
+  void _previewEffects() {
+    unawaited(AudioService.instance.playSfx(AppAudio.sfxToggle));
+  }
+
+  Future<void> _onBack() async {
+    _apply();
+    await SettingsService.instance.save();
     if (mounted) Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.bg,
       body: Stack(
         fit: StackFit.expand,
         children: [
           VideoBg(fallback: AppImages.homeBg),
-          const ColoredBox(color: Color(0x88000000)),
+          const ColoredBox(color: AppColors.scrim),
           Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -55,9 +75,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 children: [
                   Text(
                     'Settings',
-                    style: GoogleFonts.cinzel(
+                    style: AppTextStyles.displayTitle(color: AppColors.primary).copyWith(
                       fontSize: 28,
-                      color: AppColors.primary,
                       letterSpacing: 3,
                     ),
                   ),
@@ -65,25 +84,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _ToggleButton(
                     label: 'Mute All',
                     active: _muteAll,
-                    onTap: () => setState(() => _muteAll = !_muteAll),
+                    onTap: () {
+                      setState(() => _muteAll = !_muteAll);
+                      _apply();
+                      // Only audible when un-muting, which is the point: the
+                      // flick confirms sound is back on.
+                      _previewEffects();
+                    },
                   ),
                   const SizedBox(height: 32),
                   _VolumeSlider(
                     label: 'General',
                     value: _general,
-                    onChanged: (v) => setState(() => _general = v),
+                    onChanged: (v) {
+                      setState(() => _general = v);
+                      _apply();
+                    },
+                    onChangeEnd: _previewEffects,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppSpacing.lg),
                   _VolumeSlider(
                     label: 'Music',
                     value: _music,
-                    onChanged: (v) => setState(() => _music = v),
+                    onChanged: (v) {
+                      setState(() => _music = v);
+                      _apply();
+                    },
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppSpacing.lg),
                   _VolumeSlider(
                     label: 'Effects',
                     value: _effects,
-                    onChanged: (v) => setState(() => _effects = v),
+                    onChanged: (v) {
+                      setState(() => _effects = v);
+                      _apply();
+                    },
+                    onChangeEnd: _previewEffects,
                   ),
                   const SizedBox(height: 48),
                   _MenuButton(label: 'Back', onTap: _onBack),
@@ -118,14 +154,17 @@ class _ToggleButton extends StatelessWidget {
               onPressed: onTap,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.background,
+                foregroundColor: AppColors.bg,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
                 ),
               ),
               child: Text(
                 label,
-                style: const TextStyle(fontSize: 18, letterSpacing: 2),
+                style: AppTextStyles.button(color: AppColors.bg).copyWith(
+                  fontSize: 18,
+                  letterSpacing: 2,
+                ),
               ),
             )
           : OutlinedButton(
@@ -134,12 +173,15 @@ class _ToggleButton extends StatelessWidget {
                 foregroundColor: AppColors.primary,
                 side: const BorderSide(color: AppColors.primary, width: 1.5),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
                 ),
               ),
               child: Text(
                 label,
-                style: const TextStyle(fontSize: 18, letterSpacing: 2),
+                style: AppTextStyles.button(color: AppColors.primary).copyWith(
+                  fontSize: 18,
+                  letterSpacing: 2,
+                ),
               ),
             ),
     );
@@ -151,11 +193,16 @@ class _VolumeSlider extends StatelessWidget {
     required this.label,
     required this.value,
     required this.onChanged,
+    this.onChangeEnd,
   });
 
   final String label;
   final double value;
   final ValueChanged<double> onChanged;
+
+  /// Fired once when the player lets go of the thumb — used to play a preview
+  /// blip. Absent on the Music slider, which previews itself continuously.
+  final VoidCallback? onChangeEnd;
 
   @override
   Widget build(BuildContext context) {
@@ -165,7 +212,7 @@ class _VolumeSlider extends StatelessWidget {
           width: 70,
           child: Text(
             label,
-            style: const TextStyle(color: Colors.white70, fontSize: 14),
+            style: AppTextStyles.body(color: AppColors.textHigh),
           ),
         ),
         Expanded(
@@ -174,15 +221,16 @@ class _VolumeSlider extends StatelessWidget {
             min: 0,
             max: 1,
             onChanged: onChanged,
-            activeColor: Colors.white,
-            inactiveColor: Colors.white24,
+            onChangeEnd: onChangeEnd == null ? null : (_) => onChangeEnd!(),
+            activeColor: AppColors.primary,
+            inactiveColor: AppColors.secondary,
           ),
         ),
         SizedBox(
           width: 36,
           child: Text(
             '${(value * 100).round()}%',
-            style: const TextStyle(color: Colors.white54, fontSize: 12),
+            style: AppTextStyles.caption(color: AppColors.textMuted),
             textAlign: TextAlign.right,
           ),
         ),
@@ -207,11 +255,16 @@ class _MenuButton extends StatelessWidget {
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.primary,
           side: const BorderSide(color: AppColors.primary, width: 1.5),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+          ),
         ),
         child: Text(
           label,
-          style: const TextStyle(fontSize: 20, letterSpacing: 2),
+          style: AppTextStyles.button(color: AppColors.primary).copyWith(
+            fontSize: 20,
+            letterSpacing: 2,
+          ),
         ),
       ),
     );

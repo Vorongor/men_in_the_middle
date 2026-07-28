@@ -1,6 +1,7 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+﻿import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../db/database_helper.dart';
+import '../models/economy_tuning.dart';
 import '../models/hardware_item.dart';
 import '../models/profile.dart';
 import '../models/software_item.dart';
@@ -91,6 +92,10 @@ class CatalogRepository {
         ),
     };
   }
+
+  /// Fetches the economy tuning configuration from meta.
+  Future<EconomyTuning> fetchEconomyTuning() async =>
+      EconomyTuning.load(await _db.db);
 }
 
 // ── Provider ──────────────────────────────────────────────────────────────────
@@ -98,3 +103,7 @@ class CatalogRepository {
 final catalogRepositoryProvider = Provider<CatalogRepository>(
   (ref) => CatalogRepository(DatabaseHelper.instance),
 );
+
+final economyTuningProvider = FutureProvider<EconomyTuning>((ref) async {
+  return ref.watch(catalogRepositoryProvider).fetchEconomyTuning();
+});

@@ -1,9 +1,10 @@
-import 'dart:math';
+﻿import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../db/database_helper.dart';
 import '../game/resolution/resolution_engine.dart';
 import '../models/active_contract.dart';
+import '../models/economy_tuning.dart';
 import '../models/profile.dart';
 import '../models/target_template.dart';
 import '../utils/wanted_effects.dart';
@@ -14,9 +15,10 @@ class TargetRepository {
   final DatabaseHelper _db;
   const TargetRepository(this._db);
 
-  /// Fetches all active (uncompleted) contracts for the given player profile.
+  /// Fetches all active (uncompleted and not expired) contracts for the given player profile.
   Future<List<ContractDetails>> fetchActiveContracts(int profileId) async {
     final d = await _db.db;
+    final nowStr = DateTime.now().toIso8601String();
     final List<Map<String, dynamic>> maps = await d.rawQuery('''
       SELECT
         ac.id, ac.profile_id, ac.target_template_id, ac.mission_type_id, ac.defense, ac.epts_reward, ac.trust_reward, ac.expires_at, ac.is_completed, ac.is_honeypot,
@@ -28,7 +30,8 @@ class TargetRepository {
       JOIN target_types tty ON tt.type_id = tty.id
       JOIN mission_types mt ON ac.mission_type_id = mt.id
       WHERE ac.profile_id = ? AND ac.is_completed = 0
-    ''', [profileId]);
+        AND (ac.expires_at IS NULL OR ac.expires_at > ?)
+    ''', [profileId, nowStr]);
     return maps.map(ContractDetails.fromMap).toList();
   }
 
@@ -52,14 +55,22 @@ class TargetRepository {
   }
 
   /// Refreshes (regenerates) 5 to 7 contracts for the given player.
-  /// If [payFee] is true, deducts 10 EPTS from their balance (throws InsufficientFundsException if not enough).
-  /// Generates a randomized list that guarantees at least 1 "easy" contract and 1 "hard" contract.
-  Future<void> refreshContracts(Profile profile, {bool payFee = false, int? customSeed}) async {
+  /// If [payFee] is true, deducts the board refresh fee from their balance (throws InsufficientFundsException if not enough).
+  /// Generates a randomized list that guarantees at least 1 "easy" contract, 1 "hard" contract,
+  /// and at least 1 contract compatible with the player's owned software tools.
+  Future<void> refreshContracts(Profile profile, {
+    bool payFee = false,
+    int? customSeed,
+    required List<int> ownedSoftTypeIds,
+  }) async {
     final d = await _db.db;
     final rand = customSeed != null ? Random(customSeed) : Random();
 
     await d.transaction((txn) async {
       final profileId = profile.id!;
+
+      // 0. Load Economy Tuning
+      final tuning = await EconomyTuning.load(txn);
 
       // 1. Pay fee if requested
       if (payFee) {
@@ -67,7 +78,7 @@ class TargetRepository {
         if (profileMaps.isEmpty) throw Exception('Profile not found');
         final currentEpts = profileMaps.first['epts_balance'] as int;
 
-        const fee = 10;
+        final fee = tuning.boardRefreshFee;
         if (currentEpts < fee) {
           throw const InsufficientFundsException();
         }
@@ -132,6 +143,34 @@ class TargetRepository {
         selectedTemplates.add(templates[rand.nextInt(templates.length)]);
       }
 
+      // Ensure at least one contract is compatible with the player's owned software tools.
+      final missionToSoftType = {
+        for (var m in missionMaps) m['id'] as int: m['primary_soft_type_id'] as int
+      };
+
+      bool hasCompatible = false;
+      for (final t in selectedTemplates) {
+        final mId = _getMissionTypeIdForTargetType(t.typeId);
+        final softId = missionToSoftType[mId];
+        if (softId != null && ownedSoftTypeIds.contains(softId)) {
+          hasCompatible = true;
+          break;
+        }
+      }
+
+      if (!hasCompatible && selectedTemplates.isNotEmpty) {
+        final compatibleTemplates = templates.where((t) {
+          final mId = _getMissionTypeIdForTargetType(t.typeId);
+          final softId = missionToSoftType[mId];
+          return softId != null && ownedSoftTypeIds.contains(softId);
+        }).toList();
+
+        if (compatibleTemplates.isNotEmpty) {
+          // Replace index 0 (the easy slot) with a compatible template
+          selectedTemplates[0] = compatibleTemplates[rand.nextInt(compatibleTemplates.length)];
+        }
+      }
+
       // 6. At elevated wanted, one slot on the board is a silent trap —
       // never labeled in the UI, it just always fails on attack (see
       // ResolutionEngine.resolve). Picked once per refresh, independent of
@@ -148,8 +187,13 @@ class TargetRepository {
         final rewardMult = missionMults[missionTypeId] ?? 1.0;
 
         final defense = (template.baseDefense * variation).round().clamp(1, 999999);
-        final epts = (template.eptsReward * rewardMult * variation).round();
+        var epts = (template.eptsReward * rewardMult * variation).round();
         final trust = (template.trustReward * rewardMult * variation).round();
+
+        // Guarantee insurance reward floor for the compatible contract (which is at index 0)
+        if (i == 0) {
+          epts = max(epts, tuning.insuranceMinReward);
+        }
 
         await txn.insert('active_contracts', {
           'profile_id': profileId,
@@ -158,7 +202,7 @@ class TargetRepository {
           'defense': defense,
           'epts_reward': epts,
           'trust_reward': trust,
-          'expires_at': DateTime.now().add(const Duration(days: 1)).toIso8601String(),
+          'expires_at': DateTime.now().add(Duration(hours: tuning.contractTtlHours)).toIso8601String(),
           'is_completed': 0,
           'is_honeypot': i == honeypotIndex ? 1 : 0,
         });

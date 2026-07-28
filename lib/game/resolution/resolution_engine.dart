@@ -45,6 +45,18 @@ class ResolutionEngine {
   static int effectiveAttack(AttackSetup setup) =>
       (setup.selectedSoftware.userSoftware.attack * setup.damageMult).round();
 
+  /// Effective attack power ratio relative to defense.
+  static double powerRatio(AttackSetup setup) {
+    final defense = setup.contract.defense;
+    if (defense <= 0) return 0.0;
+    return effectiveAttack(setup) / defense;
+  }
+
+  /// Calculates trace risk score for the prep preview.
+  static double traceRisk(AttackSetup setup) {
+    return setup.traceMult * setup.selectedSoftware.userSoftware.residualTrace;
+  }
+
   /// Suggested countdown for the minigame, in seconds. Stronger effective
   /// attack and higher penetration shrink the target's effective defense;
   /// being under-equipped on hardware shaves a further penalty off the top.

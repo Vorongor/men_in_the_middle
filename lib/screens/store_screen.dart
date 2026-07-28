@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../models/software_item.dart';
 import '../models/user_software.dart';
 import '../repos/catalog_repository.dart';
 import '../repos/inventory_repository.dart';
 import '../state/player_session.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_text_styles.dart';
 import '../utils/async_value_ext.dart';
 import '../utils/route_args.dart';
 import '../utils/routes.dart';
 import '../utils/wanted_effects.dart';
+import '../widgets/app_icon.dart';
 import '../widgets/game_scaffold.dart';
 
 class StoreScreen extends ConsumerStatefulWidget {
@@ -21,7 +24,7 @@ class StoreScreen extends ConsumerStatefulWidget {
 }
 
 class _StoreScreenState extends ConsumerState<StoreScreen> {
-  late Future<(List<SoftwareItem>, List<OwnedSoftware>)> _loadFuture;
+  late final Future<(List<SoftwareItem>, List<OwnedSoftware>)> _loadFuture;
 
   @override
   void initState() {
@@ -42,7 +45,7 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
       });
     } else {
       setState(() {
-        _loadFuture = Future.value((<SoftwareItem>[], <OwnedSoftware>[]));
+        _loadFuture = Future.value((const <SoftwareItem>[], const <OwnedSoftware>[]));
       });
     }
   }
@@ -68,11 +71,14 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
     final profile = sessionState.valueOrNull?.profile;
 
     if (profile == null) {
-      return const GameScaffold(
+      return GameScaffold(
         screenNum: '6.1',
         screenName: 'GREY STORE',
         body: Center(
-          child: Text('Not authenticated', style: TextStyle(color: Colors.white60)),
+          child: Text(
+            'Not authenticated',
+            style: AppTextStyles.body(color: AppColors.textMuted),
+          ),
         ),
       );
     }
@@ -84,18 +90,18 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
         future: _loadFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: Colors.green));
+            return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
             return Center(
               child: Text(
                 'Error loading catalog: ${snapshot.error}',
-                style: const TextStyle(color: Colors.redAccent),
+                style: AppTextStyles.body(color: AppColors.alert),
               ),
             );
           }
 
-          final (catalog, owned) = snapshot.data ?? (<SoftwareItem>[], <OwnedSoftware>[]);
+          final (catalog, owned) = snapshot.data ?? (const <SoftwareItem>[], const <OwnedSoftware>[]);
 
           return ListView.builder(
             itemCount: catalog.length,
@@ -122,7 +128,6 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
                 effectivePrice: WantedEffects.effectivePrice(item.basePrice, profile.wanted),
                 isRiskTaxed: WantedEffects.isRiskTaxed(profile.wanted),
                 onTap: () async {
-                  // Navigate to detail page and wait to refresh list if user buys it
                   await Navigator.pushNamed(
                     context,
                     Routes.storeItem,
@@ -169,7 +174,7 @@ class _StoreRow extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: Color(0xFF111111))),
+          border: Border(bottom: BorderSide(color: AppColors.divider)),
         ),
         child: Opacity(
           opacity: opacity,
@@ -180,17 +185,26 @@ class _StoreRow extends StatelessWidget {
                 height: 36,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: isLocked ? const Color(0xFF160A0A) : const Color(0xFF0C160C),
-                  borderRadius: BorderRadius.circular(4),
+                  color: isLocked ? AppColors.surfaceError : AppColors.surfaceSuccess,
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
                   border: Border.all(
-                    color: isLocked ? const Color(0xFF2D1414) : const Color(0xFF1E351E),
+                    color: isLocked ? AppColors.alert.withValues(alpha: 0.2) : AppColors.borderSuccess,
                   ),
                 ),
-                child: Icon(
-                  isLocked ? Icons.lock_outline : Icons.terminal,
-                  color: isLocked ? Colors.redAccent : Colors.greenAccent,
-                  size: 16,
-                ),
+                // A locked item keeps the padlock — the catalog icon only shows
+                // once the item is actually reachable.
+                child: isLocked
+                    ? const Icon(
+                        Icons.lock_outline,
+                        color: AppColors.alert,
+                        size: 16,
+                      )
+                    : AppIcon(
+                        iconKey: item.iconKey,
+                        kind: AppIconKind.software,
+                        size: 16,
+                        color: AppColors.primary,
+                      ),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -199,8 +213,7 @@ class _StoreRow extends StatelessWidget {
                   children: [
                     Text(
                       item.name,
-                      style: GoogleFonts.shareTechMono(
-                        color: Colors.white,
+                      style: AppTextStyles.dataMono(color: AppColors.text).copyWith(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                       ),
@@ -208,11 +221,7 @@ class _StoreRow extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       typeName.toUpperCase(),
-                      style: GoogleFonts.shareTechMono(
-                        color: Colors.white30,
-                        fontSize: 11,
-                        letterSpacing: 1,
-                      ),
+                      style: AppTextStyles.caption(color: AppColors.textMuted),
                     ),
                   ],
                 ),
@@ -221,24 +230,22 @@ class _StoreRow extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF240C0C),
+                    color: AppColors.surfaceError,
                     borderRadius: BorderRadius.circular(3),
-                    border: Border.all(color: const Color(0xFF4C1414)),
+                    border: Border.all(color: AppColors.alert.withValues(alpha: 0.3)),
                   ),
                   child: Text(
                     lockReason.toUpperCase(),
-                    style: GoogleFonts.shareTechMono(
-                      color: Colors.redAccent,
-                      fontSize: 9,
+                    style: AppTextStyles.caption(color: AppColors.alert).copyWith(
                       fontWeight: FontWeight.bold,
+                      fontSize: 11,
                     ),
                   ),
                 )
               else if (isOwned)
                 Text(
                   'OWNED',
-                  style: GoogleFonts.shareTechMono(
-                    color: Colors.white30,
+                  style: AppTextStyles.dataMono(color: AppColors.textMuted).copyWith(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                   ),
@@ -249,25 +256,20 @@ class _StoreRow extends StatelessWidget {
                   children: [
                     Text(
                       '$effectivePrice EPTS',
-                      style: GoogleFonts.shareTechMono(
-                        color: Colors.greenAccent,
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: AppTextStyles.dataMono(color: AppColors.primary),
                     ),
                     if (isRiskTaxed)
                       Text(
                         'RISK TAX',
-                        style: GoogleFonts.shareTechMono(
-                          color: Colors.orangeAccent,
-                          fontSize: 8,
+                        style: AppTextStyles.caption(color: AppColors.warning).copyWith(
+                          fontSize: 11,
                           letterSpacing: 1,
                         ),
                       ),
                   ],
                 ),
               const SizedBox(width: 8),
-              const Icon(Icons.chevron_right, color: Colors.white10, size: 16),
+              Icon(Icons.chevron_right, color: AppColors.iconLow, size: 16),
             ],
           ),
         ),

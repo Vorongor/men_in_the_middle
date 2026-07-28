@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../models/user_hardware.dart';
 import '../models/user_software.dart';
 import '../repos/inventory_repository.dart';
 import '../state/player_session.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_text_styles.dart';
 import '../utils/async_value_ext.dart';
 import '../utils/route_args.dart';
 import '../utils/routes.dart';
@@ -82,28 +84,28 @@ class _WorkshopScreenState extends ConsumerState<WorkshopScreen> {
         body: Column(
           children: [
             TabBar(
-              indicatorColor: Colors.greenAccent,
-              labelColor: Colors.greenAccent,
-              unselectedLabelColor: Colors.white38,
-              labelStyle: GoogleFonts.shareTechMono(fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1),
+              indicatorColor: AppColors.primary,
+              labelColor: AppColors.primary,
+              unselectedLabelColor: AppColors.textMuted,
+              labelStyle: AppTextStyles.button().copyWith(fontSize: 12, letterSpacing: 1),
               tabs: const [
                 Tab(text: 'SOFTWARE TOOLS'),
                 Tab(text: 'HARDWARE MODULES'),
               ],
             ),
-            const Divider(color: Color(0xFF111111), height: 1),
+            const Divider(),
             Expanded(
               child: FutureBuilder<(List<OwnedSoftware>, List<OwnedHardware>)>(
                 future: _loadFuture,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator(color: Colors.green));
+                    return const Center(child: CircularProgressIndicator());
                   }
                   if (snapshot.hasError) {
                     return Center(
                       child: Text(
                         'Error loading inventory: ${snapshot.error}',
-                        style: const TextStyle(color: Colors.redAccent),
+                        style: AppTextStyles.body(color: AppColors.alert),
                       ),
                     );
                   }
@@ -117,7 +119,7 @@ class _WorkshopScreenState extends ConsumerState<WorkshopScreen> {
                           ? Center(
                               child: Text(
                                 'NO SOFTWARE INSTALLED',
-                                style: GoogleFonts.shareTechMono(color: Colors.white24),
+                                style: AppTextStyles.body(color: AppColors.textMuted),
                               ),
                             )
                           : ListView.builder(
@@ -155,7 +157,7 @@ class _WorkshopScreenState extends ConsumerState<WorkshopScreen> {
                           ? Center(
                               child: Text(
                                 'NO HARDWARE MODULES OWNED',
-                                style: GoogleFonts.shareTechMono(color: Colors.white24),
+                                style: AppTextStyles.body(color: AppColors.textMuted),
                               ),
                             )
                           : ListView.builder(
@@ -222,9 +224,9 @@ class _InventoryRow extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl, vertical: 14),
         decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: Color(0xFF111111))),
+          border: Border(bottom: BorderSide(color: AppColors.divider)),
         ),
         child: Row(
           children: [
@@ -233,11 +235,11 @@ class _InventoryRow extends StatelessWidget {
               height: 36,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: const Color(0xFF0C160C),
-                borderRadius: BorderRadius.circular(4),
-                border: Border.all(color: const Color(0xFF1E351E)),
+                color: AppColors.surfaceSuccess,
+                borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                border: Border.all(color: AppColors.borderSuccess),
               ),
-              child: Icon(icon, color: Colors.greenAccent, size: 16),
+              child: Icon(icon, color: AppColors.primary, size: 16),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -246,8 +248,7 @@ class _InventoryRow extends StatelessWidget {
                 children: [
                   Text(
                     name,
-                    style: GoogleFonts.shareTechMono(
-                      color: Colors.white,
+                    style: AppTextStyles.dataMono(color: AppColors.text).copyWith(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                     ),
@@ -255,9 +256,7 @@ class _InventoryRow extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     subText,
-                    style: GoogleFonts.shareTechMono(
-                      color: Colors.white30,
-                      fontSize: 11,
+                    style: AppTextStyles.caption(color: AppColors.textMuted).copyWith(
                       letterSpacing: 1,
                     ),
                   ),
@@ -266,14 +265,14 @@ class _InventoryRow extends StatelessWidget {
             ),
             Text(
               lvlText,
-              style: GoogleFonts.shareTechMono(
-                color: isMax ? Colors.amberAccent : Colors.greenAccent,
+              style: AppTextStyles.dataMono(
+                color: isMax ? AppColors.warning : AppColors.primary,
+              ).copyWith(
                 fontSize: 12,
-                fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(width: 8),
-            const Icon(Icons.chevron_right, color: Colors.white10, size: 16),
+            Icon(Icons.chevron_right, color: AppColors.iconLow, size: 16),
           ],
         ),
       ),

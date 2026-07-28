@@ -1,0 +1,6 @@
+{
+  "board_refresh_fee": 10,
+  "sell_ratio": 0.5,
+  "contract_ttl_hours": 24,
+  "insurance_min_reward": 10
+}

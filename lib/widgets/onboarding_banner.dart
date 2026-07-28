@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../repos/onboarding_repository.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_text_styles.dart';
 
 /// A one-time dismissible tip, shown floating over a screen's content until
 /// the player closes it — then never again (tracked via [OnboardingRepository]
@@ -46,39 +48,38 @@ class _OnboardingTipState extends ConsumerState<OnboardingTip> {
         if (snapshot.data != false) return const SizedBox.shrink();
 
         return Positioned(
-          left: 16,
-          right: 16,
-          bottom: 16,
+          left: AppSpacing.lg,
+          right: AppSpacing.lg,
+          bottom: AppSpacing.lg,
           child: SafeArea(
             child: Material(
               color: Colors.transparent,
               child: Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0C160C),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFF1E351E)),
+                  color: AppColors.surfaceSuccess,
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                  border: Border.all(color: AppColors.borderSuccess),
                   boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 12)],
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.lightbulb_outline, color: Colors.greenAccent, size: 18),
+                    const Icon(Icons.lightbulb_outline, color: AppColors.primary, size: 18),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         widget.message,
-                        style: GoogleFonts.shareTechMono(
-                          color: Colors.white70,
+                        style: AppTextStyles.body(color: AppColors.textHigh).copyWith(
                           fontSize: 12,
                           height: 1.4,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppSpacing.sm),
                     InkWell(
                       onTap: _dismiss,
-                      child: const Icon(Icons.close, color: Colors.white38, size: 18),
+                      child: const Icon(Icons.close, color: AppColors.textMuted, size: 18),
                     ),
                   ],
                 ),

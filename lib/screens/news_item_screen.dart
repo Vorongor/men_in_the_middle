@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
+import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_text_styles.dart';
 import '../utils/route_args.dart';
 import '../widgets/game_scaffold.dart';
 
@@ -16,7 +18,7 @@ class NewsItemScreen extends StatelessWidget {
         screenNum: '10.2',
         screenName: 'NEWS ARTICLE',
         body: Center(
-          child: Text('Invalid arguments', style: TextStyle(color: Colors.white38)),
+          child: Text('Invalid arguments'),
         ),
       );
     }
@@ -27,40 +29,55 @@ class NewsItemScreen extends StatelessWidget {
       screenNum: '10.2',
       screenName: 'NEWS ARTICLE',
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.xxl,
+          vertical: AppSpacing.xl,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1A1A0D),
-                    borderRadius: BorderRadius.circular(4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                    vertical: AppSpacing.xs,
                   ),
-                  child: Text(article.category,
-                      style: const TextStyle(
-                          color: Colors.amberAccent,
-                          fontSize: 10,
-                          letterSpacing: 1)),
+                  decoration: BoxDecoration(
+                    color: AppColors.warning.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                    border: Border.all(
+                      color: AppColors.warning.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Text(
+                    article.category,
+                    style: AppTextStyles.caption(color: AppColors.warning),
+                  ),
                 ),
-                const SizedBox(width: 8),
-                Text(article.time,
-                    style: const TextStyle(
-                        color: Colors.white38, fontSize: 11)),
+                const SizedBox(width: AppSpacing.sm),
+                Text(
+                  article.time,
+                  style: AppTextStyles.caption(color: AppColors.textMuted),
+                ),
               ],
             ),
-            const SizedBox(height: 12),
-            Text(article.title,
-                style: GoogleFonts.cinzel(
-                    color: Colors.white, fontSize: 16, letterSpacing: 1)),
-            const Divider(color: Color(0xFF1A1A1A), height: 24),
-            Text(article.body,
-                style: const TextStyle(
-                    color: Colors.white70, fontSize: 13, height: 1.7)),
-            const SizedBox(height: 32),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              article.title,
+              style: AppTextStyles.displayTitle(color: AppColors.text).copyWith(
+                fontSize: 16,
+                letterSpacing: 1,
+              ),
+            ),
+            const Divider(height: 24),
+            Text(
+              article.body,
+              style: AppTextStyles.body(color: AppColors.textHigh).copyWith(
+                height: 1.7,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xxl),
           ],
         ),
       ),

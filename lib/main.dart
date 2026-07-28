@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit/media_kit.dart';
 import 'app.dart';
 import 'services/audio_service.dart';
+import 'services/news_state_service.dart';
 import 'services/settings_service.dart';
 import 'utils/app_logger.dart';
 
@@ -16,6 +17,7 @@ void main() async {
   ]);
   MediaKit.ensureInitialized();
   await SettingsService.instance.load();
+  await NewsStateService.instance.load();
   await AudioService.instance.startBgm();
   runApp(const ProviderScope(child: App()));
 }

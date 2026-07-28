@@ -1,5 +1,5 @@
 import 'dart:async' show unawaited;
-import 'dart:ui' show Color, Paint;
+import 'dart:ui' show Paint;
 
 import 'package:flame/components.dart';
 import 'package:flame/game.dart';
@@ -8,6 +8,7 @@ import 'package:flutter/material.dart' show Colors, KeyEventResult, TextStyle;
 import 'package:flutter/services.dart' show KeyEvent, LogicalKeyboardKey;
 
 import '../../services/audio_service.dart';
+import '../../theme/app_colors.dart';
 import '../../utils/constants.dart';
 import '../resolution/attack_models.dart';
 import 'packet.dart';
@@ -84,11 +85,9 @@ class SnifferGame extends FlameGame with HasCollisionDetection, KeyboardEvents {
     _refreshHud();
   }
 
-  @override
-  void onGameResize(Vector2 size) {
-    super.onGameResize(size);
-    paddle.setBounds(size.x);
-  }
+  // onGameResize is intentionally not overridden here.
+  // SnifferPaddle.onGameResize handles its own bounds update after mount,
+  // which structurally eliminates the LateInitializationError race.
 
   void _refreshHud() {
     _timerText.text = 'TIME  ${timeRemaining.ceil()}s';
@@ -174,7 +173,12 @@ class SnifferGame extends FlameGame with HasCollisionDetection, KeyboardEvents {
   /// Forwarded from a [GestureDetector] wrapping the [GameWidget] — Flame's
   /// own drag-callback plumbing adds a dispatcher indirection that isn't
   /// worth it for "drag anywhere moves the paddle".
-  void dragPaddleBy(double dx) => paddle.moveBy(dx);
+  ///
+  /// No-op if [onLoad] hasn't finished yet (paddle is not initialised).
+  void dragPaddleBy(double dx) {
+    if (!isLoaded) return;
+    paddle.moveBy(dx);
+  }
 
   @override
   KeyEventResult onKeyEvent(KeyEvent event, Set<LogicalKeyboardKey> keysPressed) {
@@ -192,7 +196,7 @@ class _CatchFlash extends CircleComponent {
         radius: 6,
         position: position,
         anchor: Anchor.center,
-        paint: Paint()..color = const Color(0xFF39D353).withValues(alpha: 0.7),
+        paint: Paint()..color = AppColors.primary.withValues(alpha: 0.7),
       );
 
   static const _duration = 0.25;

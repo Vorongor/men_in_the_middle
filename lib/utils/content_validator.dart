@@ -11,6 +11,7 @@ class ContentValidator {
     required String missionTypesJson,
     required String effectivenessJson,
     required String levelCurveJson,
+    required String economyJson,
   }) {
     // 1. Parse and cast JSON lists to map lists to avoid dynamic call warnings
     final softItems = (jsonDecode(softwareItemsJson) as List<dynamic>).cast<Map<String, dynamic>>();
@@ -162,5 +163,22 @@ class ContentValidator {
         throw FormatException('Level curve missing entry for level $l');
       }
     }
+
+    // 10. Validate Economy Settings
+    final economy = jsonDecode(economyJson) as Map<String, dynamic>;
+    for (final key in ['board_refresh_fee', 'sell_ratio', 'contract_ttl_hours', 'insurance_min_reward']) {
+      if (!economy.containsKey(key)) {
+        throw FormatException('economy.json missing key: $key');
+      }
+    }
+    final boardRefreshFee = economy['board_refresh_fee'] as int;
+    final sellRatio = (economy['sell_ratio'] as num).toDouble();
+    final contractTtlHours = economy['contract_ttl_hours'] as int;
+    final insuranceMinReward = economy['insurance_min_reward'] as int;
+
+    if (boardRefreshFee < 0) throw FormatException('Invalid board_refresh_fee: $boardRefreshFee');
+    if (sellRatio < 0.0 || sellRatio > 1.0) throw FormatException('Invalid sell_ratio: $sellRatio');
+    if (contractTtlHours <= 0) throw FormatException('Invalid contract_ttl_hours: $contractTtlHours');
+    if (insuranceMinReward < 0) throw FormatException('Invalid insurance_min_reward: $insuranceMinReward');
   }
 }

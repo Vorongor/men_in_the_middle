@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../models/hardware_item.dart';
 import '../models/user_hardware.dart';
 import '../repos/catalog_repository.dart';
 import '../repos/inventory_repository.dart';
 import '../state/player_session.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_text_styles.dart';
 import '../utils/async_value_ext.dart';
 import '../utils/route_args.dart';
 import '../utils/routes.dart';
 import '../utils/wanted_effects.dart';
+import '../widgets/app_icon.dart';
 import '../widgets/game_scaffold.dart';
 
 class MarketScreen extends ConsumerStatefulWidget {
@@ -73,32 +76,33 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
           // Filter chips header
           Container(
             height: 48,
-            color: const Color(0xFF070707),
+            color: AppColors.surface,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
               itemCount: _types.length,
               itemBuilder: (context, i) {
                 final type = _types[i];
                 final isSelected = _selectedType == type;
                 return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: AppSpacing.sm),
                   child: ChoiceChip(
                     label: Text(
                       type,
-                      style: GoogleFonts.shareTechMono(
-                        fontSize: 11,
+                      style: AppTextStyles.caption().copyWith(
                         fontWeight: FontWeight.bold,
-                        color: isSelected ? Colors.black : Colors.white60,
+                        color: isSelected ? AppColors.bg : AppColors.textHigh,
                       ),
                     ),
                     selected: isSelected,
-                    selectedColor: Colors.greenAccent,
-                    backgroundColor: const Color(0xFF141414),
+                    selectedColor: AppColors.primary,
+                    backgroundColor: AppColors.bg,
                     side: BorderSide(
-                      color: isSelected ? Colors.greenAccent : const Color(0xFF222222),
+                      color: isSelected ? AppColors.primary : AppColors.border,
                     ),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                    ),
                     showCheckmark: false,
                     onSelected: (selected) {
                       if (selected) {
@@ -110,20 +114,20 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
               },
             ),
           ),
-          const Divider(color: Color(0xFF111111), height: 1),
+          const Divider(),
 
           Expanded(
             child: FutureBuilder<(List<HardwareItem>, List<OwnedHardware>)>(
               future: _loadFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator(color: Colors.green));
+                  return const Center(child: CircularProgressIndicator());
                 }
                 if (snapshot.hasError) {
                   return Center(
                     child: Text(
                       'Error loading market: ${snapshot.error}',
-                      style: const TextStyle(color: Colors.redAccent),
+                      style: AppTextStyles.body(color: AppColors.alert),
                     ),
                   );
                 }
@@ -139,7 +143,7 @@ class _MarketScreenState extends ConsumerState<MarketScreen> {
                   return Center(
                     child: Text(
                       'NO HARDWARE REGISTERED',
-                      style: GoogleFonts.shareTechMono(color: Colors.white24),
+                      style: AppTextStyles.body(color: AppColors.textMuted),
                     ),
                   );
                 }
@@ -213,9 +217,9 @@ class _MarketRow extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl, vertical: 14),
         decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: Color(0xFF111111))),
+          border: Border(bottom: BorderSide(color: AppColors.divider)),
         ),
         child: Opacity(
           opacity: opacity,
@@ -226,17 +230,26 @@ class _MarketRow extends StatelessWidget {
                 height: 36,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: isLocked ? const Color(0xFF160A0A) : const Color(0xFF0C160C),
-                  borderRadius: BorderRadius.circular(4),
+                  color: isLocked ? AppColors.surfaceError : AppColors.surfaceSuccess,
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
                   border: Border.all(
-                    color: isLocked ? const Color(0xFF2D1414) : const Color(0xFF1E351E),
+                    color: isLocked ? AppColors.alert.withValues(alpha: 0.3) : AppColors.borderSuccess,
                   ),
                 ),
-                child: Icon(
-                  isLocked ? Icons.lock_outline : Icons.dns,
-                  color: isLocked ? Colors.redAccent : Colors.greenAccent,
-                  size: 16,
-                ),
+                // A locked item keeps the padlock — the catalog icon only shows
+                // once the item is actually reachable.
+                child: isLocked
+                    ? const Icon(
+                        Icons.lock_outline,
+                        color: AppColors.alert,
+                        size: 16,
+                      )
+                    : AppIcon(
+                        iconKey: item.iconKey,
+                        kind: AppIconKind.hardware,
+                        size: 16,
+                        color: AppColors.primary,
+                      ),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -245,8 +258,7 @@ class _MarketRow extends StatelessWidget {
                   children: [
                     Text(
                       item.name,
-                      style: GoogleFonts.shareTechMono(
-                        color: Colors.white,
+                      style: AppTextStyles.dataMono(color: AppColors.text).copyWith(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                       ),
@@ -254,9 +266,7 @@ class _MarketRow extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       '${item.hwType}  ·  COMPUTE POWER: +${item.initComputePower}',
-                      style: GoogleFonts.shareTechMono(
-                        color: Colors.white30,
-                        fontSize: 11,
+                      style: AppTextStyles.caption(color: AppColors.textMuted).copyWith(
                         letterSpacing: 1,
                       ),
                     ),
@@ -267,15 +277,13 @@ class _MarketRow extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF240C0C),
-                    borderRadius: BorderRadius.circular(3),
-                    border: Border.all(color: const Color(0xFF4C1414)),
+                    color: AppColors.surfaceError,
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+                    border: Border.all(color: AppColors.alert.withValues(alpha: 0.3)),
                   ),
                   child: Text(
                     lockReason.toUpperCase(),
-                    style: GoogleFonts.shareTechMono(
-                      color: Colors.redAccent,
-                      fontSize: 9,
+                    style: AppTextStyles.caption(color: AppColors.alert).copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -283,10 +291,8 @@ class _MarketRow extends StatelessWidget {
               else if (isOwned)
                 Text(
                   'OWNED',
-                  style: GoogleFonts.shareTechMono(
-                    color: Colors.white30,
+                  style: AppTextStyles.dataMono(color: AppColors.textMuted).copyWith(
                     fontSize: 12,
-                    fontWeight: FontWeight.bold,
                   ),
                 )
               else
@@ -295,25 +301,21 @@ class _MarketRow extends StatelessWidget {
                   children: [
                     Text(
                       '$effectivePrice EPTS',
-                      style: GoogleFonts.shareTechMono(
-                        color: Colors.greenAccent,
+                      style: AppTextStyles.dataMono(color: AppColors.primary).copyWith(
                         fontSize: 13,
-                        fontWeight: FontWeight.bold,
                       ),
                     ),
                     if (isRiskTaxed)
                       Text(
                         'RISK TAX',
-                        style: GoogleFonts.shareTechMono(
-                          color: Colors.orangeAccent,
-                          fontSize: 8,
+                        style: AppTextStyles.caption(color: AppColors.warning).copyWith(
                           letterSpacing: 1,
                         ),
                       ),
                   ],
                 ),
               const SizedBox(width: 8),
-              const Icon(Icons.chevron_right, color: Colors.white10, size: 16),
+              Icon(Icons.chevron_right, color: AppColors.iconLow, size: 16),
             ],
           ),
         ),

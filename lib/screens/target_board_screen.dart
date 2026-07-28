@@ -1,16 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../models/active_contract.dart';
+import '../models/economy_tuning.dart';
 import '../models/profile.dart';
+import '../repos/catalog_repository.dart';
+import '../repos/inventory_repository.dart';
 import '../repos/target_repository.dart';
 import '../state/player_session.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_text_styles.dart';
 import '../utils/app_logger.dart';
 import '../utils/async_value_ext.dart';
 import '../utils/route_args.dart';
 import '../utils/routes.dart';
 import '../utils/wanted_effects.dart';
+import '../widgets/app_snack.dart';
 import '../widgets/game_scaffold.dart';
 import '../widgets/onboarding_banner.dart';
 
@@ -19,7 +25,21 @@ final activeContractsProvider =
       final session = ref.watch(playerSessionProvider).valueOrNull;
       if (session == null || session.profile.id == null) return const [];
       final targetRepo = ref.watch(targetRepositoryProvider);
-      return targetRepo.fetchActiveContracts(session.profile.id!);
+      
+      var contracts = await targetRepo.fetchActiveContracts(session.profile.id!);
+      if (contracts.isEmpty) {
+        final inventoryRepo = ref.watch(inventoryRepositoryProvider);
+        final ownedSoft = await inventoryRepo.fetchOwnedSoftware(session.profile.id!);
+        final ownedSoftTypeIds = ownedSoft.map((s) => s.catalogItem.softTypeId).toList();
+        
+        await targetRepo.refreshContracts(
+          session.profile,
+          payFee: false,
+          ownedSoftTypeIds: ownedSoftTypeIds,
+        );
+        contracts = await targetRepo.fetchActiveContracts(session.profile.id!);
+      }
+      return contracts;
     });
 
 class TargetBoardScreen extends ConsumerStatefulWidget {
@@ -51,14 +71,10 @@ class _TargetBoardScreenState extends ConsumerState<TargetBoardScreen> {
     } catch (e) {
       _log.warning('ensureCleanUpContract($profileId) failed', e);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: const Color(0xFF240C0C),
-            content: Text(
-              'CLEANUP DISPATCH FAILED: $e',
-              style: GoogleFonts.shareTechMono(color: Colors.redAccent),
-            ),
-          ),
+        showAppSnack(
+          context,
+          'CLEANUP DISPATCH FAILED: $e',
+          kind: AppSnackKind.error,
         );
       }
     } finally {
@@ -66,16 +82,13 @@ class _TargetBoardScreenState extends ConsumerState<TargetBoardScreen> {
     }
   }
 
-  Future<void> _handleRefresh(int currentBalance) async {
-    if (currentBalance < 10) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: const Color(0xFF240C0C),
-          content: Text(
-            'INSUFFICIENT EPTS BALANCE TO REFRESH SCANNER',
-            style: GoogleFonts.shareTechMono(color: Colors.redAccent),
-          ),
-        ),
+  Future<void> _handleRefresh(int currentBalance, EconomyTuning tuning, bool isFree) async {
+    final fee = isFree ? 0 : tuning.boardRefreshFee;
+    if (currentBalance < fee) {
+      showAppSnack(
+        context,
+        'INSUFFICIENT EPTS BALANCE TO REFRESH SCANNER',
+        kind: AppSnackKind.error,
       );
       return;
     }
@@ -84,34 +97,32 @@ class _TargetBoardScreenState extends ConsumerState<TargetBoardScreen> {
     try {
       final session = ref.read(playerSessionProvider).valueOrNull;
       if (session != null) {
+        final inventoryRepo = ref.read(inventoryRepositoryProvider);
+        final ownedSoft = await inventoryRepo.fetchOwnedSoftware(session.profile.id!);
+        final ownedSoftTypeIds = ownedSoft.map((s) => s.catalogItem.softTypeId).toList();
+
         await ref
             .read(targetRepositoryProvider)
-            .refreshContracts(session.profile, payFee: true);
+            .refreshContracts(session.profile, payFee: !isFree, ownedSoftTypeIds: ownedSoftTypeIds);
         await ref.read(playerSessionProvider.notifier).refresh();
         ref.invalidate(activeContractsProvider);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              backgroundColor: const Color(0xFF0C160C),
-              content: Text(
-                'TARGET SCAN COMPLETELY REFRESHED (10 EPTS DEDUCTED)',
-                style: GoogleFonts.shareTechMono(color: Colors.greenAccent),
-              ),
-            ),
+          showAppSnack(
+            context,
+            isFree
+                ? 'EMERGENCY SCAN COMPLETE (FREE)'
+                : 'TARGET SCAN COMPLETELY REFRESHED ($fee EPTS DEDUCTED)',
+            kind: AppSnackKind.success,
           );
         }
       }
     } catch (e) {
       _log.warning('refreshContracts failed', e);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: const Color(0xFF240C0C),
-            content: Text(
-              'REFRESH FAILED: $e',
-              style: GoogleFonts.shareTechMono(color: Colors.redAccent),
-            ),
-          ),
+        showAppSnack(
+          context,
+          'REFRESH FAILED: $e',
+          kind: AppSnackKind.error,
         );
       }
     } finally {
@@ -133,11 +144,11 @@ class _TargetBoardScreenState extends ConsumerState<TargetBoardScreen> {
   Color _getDiffColor(String diff) {
     switch (diff) {
       case 'LOW':
-        return Colors.greenAccent;
+        return AppColors.primary;
       case 'MEDIUM':
-        return Colors.orangeAccent;
+        return AppColors.warning;
       default:
-        return Colors.redAccent;
+        return AppColors.alert;
     }
   }
 
@@ -147,13 +158,13 @@ class _TargetBoardScreenState extends ConsumerState<TargetBoardScreen> {
     final profile = sessionState.valueOrNull?.profile;
 
     if (profile == null) {
-      return const GameScaffold(
+      return GameScaffold(
         screenNum: '5.1',
         screenName: 'TARGET BOARD',
         body: Center(
           child: Text(
             'Not authenticated',
-            style: TextStyle(color: Colors.white60),
+            style: AppTextStyles.body(color: AppColors.textMuted),
           ),
         ),
       );
@@ -171,14 +182,13 @@ class _TargetBoardScreenState extends ConsumerState<TargetBoardScreen> {
               children: [
                 const Icon(
                   Icons.local_fire_department,
-                  color: Colors.redAccent,
+                  color: AppColors.alert,
                   size: 48,
                 ),
                 const SizedBox(height: 16),
                 Text(
                   'TOO HOT. LAY LOW.',
-                  style: GoogleFonts.cinzel(
-                    color: Colors.redAccent,
+                  style: AppTextStyles.sectionLabel(color: AppColors.alert).copyWith(
                     fontSize: 16,
                     letterSpacing: 2,
                   ),
@@ -188,8 +198,7 @@ class _TargetBoardScreenState extends ConsumerState<TargetBoardScreen> {
                 Text(
                   'Wanted is maxed out — every eye in the sector is on you. '
                   'The board is locked until you scrub your traces.',
-                  style: GoogleFonts.shareTechMono(
-                    color: Colors.white38,
+                  style: AppTextStyles.body(color: AppColors.textMuted).copyWith(
                     fontSize: 12,
                   ),
                   textAlign: TextAlign.center,
@@ -202,16 +211,16 @@ class _TargetBoardScreenState extends ConsumerState<TargetBoardScreen> {
                         ? null
                         : () => _startCleanup(profile.id!),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.greenAccent,
-                      disabledForegroundColor: Colors.white24,
-                      side: const BorderSide(color: Color(0xFF1E351E)),
+                      foregroundColor: AppColors.primary,
+                      disabledForegroundColor: AppColors.iconLow,
+                      side: const BorderSide(color: AppColors.borderSuccess),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
                     child: Text(
                       _startingCleanup
                           ? 'DISPATCHING...'
                           : 'INITIATE CLEAN UP TRACES',
-                      style: GoogleFonts.cinzel(
+                      style: AppTextStyles.button().copyWith(
                         fontSize: 12,
                         letterSpacing: 1.5,
                       ),
@@ -227,13 +236,15 @@ class _TargetBoardScreenState extends ConsumerState<TargetBoardScreen> {
 
     final activeContractsAsync = ref.watch(activeContractsProvider);
     final softwarePower = profile.softwarePower;
+    final tuningAsync = ref.watch(economyTuningProvider);
+    final tuning = tuningAsync.valueOrNull ?? EconomyTuning.defaults;
 
     return GameScaffold(
       screenNum: '5.1',
       screenName: 'TARGET BOARD',
       body: Stack(
         children: [
-          _boardColumn(activeContractsAsync, softwarePower, profile),
+          _boardColumn(activeContractsAsync, softwarePower, profile, tuning),
           const OnboardingTip(
             tipKey: 'target_board',
             message:
@@ -249,18 +260,19 @@ class _TargetBoardScreenState extends ConsumerState<TargetBoardScreen> {
     AsyncValue<List<ContractDetails>> activeContractsAsync,
     int softwarePower,
     Profile profile,
+    EconomyTuning tuning,
   ) {
     return Column(
       children: [
         Expanded(
           child: activeContractsAsync.when(
             loading: () => const Center(
-              child: CircularProgressIndicator(color: Colors.green),
+              child: CircularProgressIndicator(),
             ),
             error: (err, _) => Center(
               child: Text(
                 'Error loading targets: $err',
-                style: const TextStyle(color: Colors.redAccent),
+                style: AppTextStyles.body(color: AppColors.alert),
               ),
             ),
             data: (contracts) {
@@ -271,26 +283,23 @@ class _TargetBoardScreenState extends ConsumerState<TargetBoardScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.wifi_off,
-                          color: Colors.white12,
+                          color: AppColors.iconLow,
                           size: 48,
                         ),
                         const SizedBox(height: 16),
                         Text(
                           'NO WIRELESS NETWORKS DETECTED',
-                          style: GoogleFonts.shareTechMono(
-                            color: Colors.white38,
+                          style: AppTextStyles.dataMono(color: AppColors.textMuted).copyWith(
                             fontSize: 14,
-                            fontWeight: FontWeight.bold,
                           ),
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 8),
                         Text(
                           'Scan database is empty. Force a network scan below to request fresh targets.',
-                          style: GoogleFonts.shareTechMono(
-                            color: Colors.white24,
+                          style: AppTextStyles.body(color: AppColors.textMuted).copyWith(
                             fontSize: 12,
                           ),
                           textAlign: TextAlign.center,
@@ -324,7 +333,7 @@ class _TargetBoardScreenState extends ConsumerState<TargetBoardScreen> {
                       ),
                       decoration: const BoxDecoration(
                         border: Border(
-                          bottom: BorderSide(color: Color(0xFF111111)),
+                          bottom: BorderSide(color: AppColors.divider),
                         ),
                       ),
                       child: Row(
@@ -334,18 +343,16 @@ class _TargetBoardScreenState extends ConsumerState<TargetBoardScreen> {
                             height: 32,
                             alignment: Alignment.center,
                             decoration: BoxDecoration(
-                              color: const Color(0xFF0C160C),
-                              borderRadius: BorderRadius.circular(4),
+                              color: AppColors.surfaceSuccess,
+                              borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
                               border: Border.all(
-                                color: const Color(0xFF1E351E),
+                                color: AppColors.borderSuccess,
                               ),
                             ),
                             child: Text(
                               '${i + 1}',
-                              style: GoogleFonts.shareTechMono(
-                                color: Colors.greenAccent,
+                              style: AppTextStyles.dataMono(color: AppColors.primary).copyWith(
                                 fontSize: 12,
-                                fontWeight: FontWeight.bold,
                               ),
                             ),
                           ),
@@ -356,20 +363,14 @@ class _TargetBoardScreenState extends ConsumerState<TargetBoardScreen> {
                               children: [
                                 Text(
                                   c.targetName,
-                                  style: GoogleFonts.shareTechMono(
-                                    color: Colors.white,
+                                  style: AppTextStyles.dataMono(color: AppColors.text).copyWith(
                                     fontSize: 14,
-                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
                                   '${c.missionName.toUpperCase()}  ·  BOUNTY: ${c.eptsReward} EPTS',
-                                  style: GoogleFonts.shareTechMono(
-                                    color: Colors.white30,
-                                    fontSize: 11,
-                                    letterSpacing: 1,
-                                  ),
+                                  style: AppTextStyles.caption(color: AppColors.textMuted),
                                 ),
                               ],
                             ),
@@ -380,31 +381,26 @@ class _TargetBoardScreenState extends ConsumerState<TargetBoardScreen> {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: _getDiffColor(
-                                diff,
-                              ).withValues(alpha: 0.08),
+                              color: _getDiffColor(diff).withValues(alpha: 0.08),
                               border: Border.all(
-                                color: _getDiffColor(
-                                  diff,
-                                ).withValues(alpha: 0.3),
+                                color: _getDiffColor(diff).withValues(alpha: 0.3),
                                 width: 1,
                               ),
-                              borderRadius: BorderRadius.circular(2),
+                              borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
                             ),
                             child: Text(
                               diff,
-                              style: GoogleFonts.shareTechMono(
-                                color: _getDiffColor(diff),
-                                fontSize: 9,
+                              style: AppTextStyles.caption(color: _getDiffColor(diff)).copyWith(
                                 fontWeight: FontWeight.bold,
+                                fontSize: 11,
                                 letterSpacing: 1,
                               ),
                             ),
                           ),
                           const SizedBox(width: 12),
-                          const Icon(
+                          Icon(
                             Icons.chevron_right,
-                            color: Colors.white10,
+                            color: AppColors.iconLow,
                             size: 16,
                           ),
                         ],
@@ -419,38 +415,43 @@ class _TargetBoardScreenState extends ConsumerState<TargetBoardScreen> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: const BoxDecoration(
-            border: Border(top: BorderSide(color: Color(0xFF111111))),
-            color: Color(0xFF070707),
+            border: Border(top: BorderSide(color: AppColors.border)),
+            color: AppColors.surface,
           ),
           child: SizedBox(
             width: double.infinity,
             child: OutlinedButton(
               onPressed: _isRefreshing
                   ? null
-                  : () => _handleRefresh(profile.eptsBalance),
+                  : () {
+                      final contracts = activeContractsAsync.valueOrNull ?? const [];
+                      final isFree = contracts.isEmpty;
+                      _handleRefresh(profile.eptsBalance, tuning, isFree);
+                    },
               style: OutlinedButton.styleFrom(
-                backgroundColor: profile.eptsBalance >= 10
-                    ? const Color(0xFF0C160C)
+                backgroundColor: (activeContractsAsync.valueOrNull ?? const []).isEmpty || profile.eptsBalance >= tuning.boardRefreshFee
+                    ? AppColors.surfaceSuccess
                     : Colors.transparent,
-                foregroundColor: Colors.greenAccent,
-                disabledForegroundColor: Colors.white24,
+                foregroundColor: AppColors.primary,
+                disabledForegroundColor: AppColors.iconLow,
                 side: BorderSide(
-                  color: profile.eptsBalance >= 10
-                      ? Colors.greenAccent
-                      : const Color(0xFF222222),
+                  color: (activeContractsAsync.valueOrNull ?? const []).isEmpty || profile.eptsBalance >= tuning.boardRefreshFee
+                      ? AppColors.primary
+                      : AppColors.border,
                 ),
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
                 ),
               ),
               child: Text(
                 _isRefreshing
                     ? 'RECALIBRATING RF RECEIVER...'
-                    : 'REFRESH WIRELESS SCAN  ·  10 EPTS',
-                style: GoogleFonts.shareTechMono(
+                    : (activeContractsAsync.valueOrNull ?? const []).isEmpty
+                        ? 'EMERGENCY SCAN  ·  FREE'
+                        : 'REFRESH WIRELESS SCAN  ·  ${tuning.boardRefreshFee} EPTS',
+                style: AppTextStyles.button().copyWith(
                   fontSize: 12,
-                  fontWeight: FontWeight.bold,
                   letterSpacing: 1.5,
                 ),
               ),

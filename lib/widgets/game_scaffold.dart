@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../state/player_session.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_text_styles.dart';
 import '../utils/async_value_ext.dart';
+import '../utils/constants.dart';
 import '../utils/routes.dart';
+import 'app_icon.dart';
 
 class GameScaffold extends ConsumerWidget {
   const GameScaffold({
@@ -14,6 +18,7 @@ class GameScaffold extends ConsumerWidget {
     required this.body,
     this.showHomeButton = true,
     this.hideBackButton = false,
+    this.showSettings = true,
   });
 
   final String screenNum;
@@ -21,6 +26,7 @@ class GameScaffold extends ConsumerWidget {
   final Widget body;
   final bool showHomeButton;
   final bool hideBackButton;
+  final bool showSettings;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -28,49 +34,62 @@ class GameScaffold extends ConsumerWidget {
     final balance = session?.profile.eptsBalance;
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppColors.bg,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF0D0D0D),
-        foregroundColor: Colors.white70,
-        automaticallyImplyLeading: !hideBackButton,
+        backgroundColor: AppColors.surface,
+        foregroundColor: AppColors.text,
+        automaticallyImplyLeading: false,
+        leading: (!hideBackButton && Navigator.of(context).canPop())
+            ? IconButton(
+                icon: const AppImageIcon(AppImages.backArrow, size: 22),
+                tooltip: 'Back',
+                onPressed: () => Navigator.of(context).maybePop(),
+              )
+            : null,
         centerTitle: true,
         title: Text(
           screenName,
-          style: GoogleFonts.cinzel(
-            fontSize: 13,
-            letterSpacing: 2,
-            color: Colors.white70,
-          ),
+          style: AppTextStyles.sectionLabel(color: AppColors.text),
         ),
         actions: [
           if (balance != null)
             Center(
               child: Padding(
-                padding: const EdgeInsets.only(right: 8),
+                padding: const EdgeInsets.only(right: AppSpacing.sm),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                    vertical: AppSpacing.xs,
+                  ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0C160C),
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(color: const Color(0xFF1E351E)),
+                    color: AppColors.surfaceSuccess,
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                    border: Border.all(color: AppColors.borderSuccess),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.currency_bitcoin, color: Colors.greenAccent, size: 12),
-                      const SizedBox(width: 4),
+                      const Icon(
+                        Icons.currency_bitcoin,
+                        color: AppColors.primary,
+                        size: 12,
+                      ),
+                      const SizedBox(width: AppSpacing.xs),
                       Text(
                         '$balance epts',
-                        style: GoogleFonts.shareTechMono(
-                          color: Colors.greenAccent,
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: AppTextStyles.dataMono(color: AppColors.primary)
+                            .copyWith(fontSize: 11),
                       ),
                     ],
                   ),
                 ),
               ),
+            ),
+          if (showSettings)
+            IconButton(
+              icon: const AppImageIcon(AppImages.settings, size: 20),
+              tooltip: 'Settings',
+              onPressed: () => Navigator.pushNamed(context, Routes.settings),
             ),
           if (showHomeButton)
             IconButton(

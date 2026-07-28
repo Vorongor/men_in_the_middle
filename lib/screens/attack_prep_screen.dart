@@ -1,6 +1,7 @@
+import 'dart:async' show unawaited;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../game/resolution/attack_models.dart';
 import '../game/resolution/resolution_engine.dart';
@@ -9,9 +10,14 @@ import '../models/user_software.dart';
 import '../repos/catalog_repository.dart';
 import '../repos/inventory_repository.dart';
 import '../repos/target_repository.dart';
+import '../services/audio_service.dart';
 import '../state/attack_session.dart';
 import '../state/player_session.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_text_styles.dart';
 import '../utils/async_value_ext.dart';
+import '../utils/constants.dart';
 import '../utils/route_args.dart';
 import '../utils/routes.dart';
 import '../utils/soft_type_names.dart';
@@ -63,29 +69,77 @@ class _AttackPrepScreenState extends ConsumerState<AttackPrepScreen> {
           targetRepo.fetchContractDetails(args.contractId),
           inventoryRepo.fetchOwnedSoftware(profile!.id!),
           catalogRepo.effectivenessMatrix(),
-        ]).then(
-          (res) => (
-            res[0] as ContractDetails?,
-            res[1] as List<OwnedSoftware>,
+        ]).then((res) {
+          final contract = res[0] as ContractDetails?;
+          final owned = res[1] as List<OwnedSoftware>;
+          if (_selectedUserSoftwareId == null && owned.isNotEmpty && contract != null) {
+            final compatibleSoft = owned.where(
+              (s) => s.catalogItem.softTypeId == contract.missionPrimarySoftTypeId,
+            );
+            if (compatibleSoft.isNotEmpty) {
+              _selectedUserSoftwareId = compatibleSoft.first.userSoftware.id;
+            } else {
+              _selectedUserSoftwareId = owned.first.userSoftware.id;
+            }
+          }
+          return (
+            contract,
+            owned,
             res[2] as Map<(int, int), (double, double)>,
-          ),
-        );
+          );
+        });
   }
 
   Color _multColor(double mult) {
-    if (mult >= 1.5) return Colors.greenAccent;
-    if (mult <= 0.5) return Colors.redAccent;
-    return Colors.white70;
+    if (mult >= 1.5) return AppColors.primary;
+    if (mult <= 0.5) return AppColors.alert;
+    return AppColors.textHigh;
+  }
+
+  Color _verdictColor(double ratio) {
+    if (ratio >= 1.0) return AppColors.primary;
+    if (ratio >= 0.5) return AppColors.warning;
+    return AppColors.alert;
+  }
+
+  Widget _buildVerdictRow(AttackSetup setup) {
+    final ratio = ResolutionEngine.powerRatio(setup);
+    final isMismatch = setup.damageMult <= 0.2;
+    
+    String verdict;
+    Color color;
+    if (ratio >= 1.0) {
+      verdict = 'STRONG';
+      color = AppColors.primary;
+    } else if (ratio >= 0.5) {
+      verdict = 'RISKY';
+      color = AppColors.warning;
+    } else {
+      verdict = isMismatch ? 'SUICIDE (tool mismatch)' : 'SUICIDE';
+      color = AppColors.alert;
+    }
+
+    return _PrepRow(
+      'Verdict',
+      verdict,
+      valueColor: color,
+      valueBold: true,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final profile = ref.watch(playerSessionProvider).valueOrNull?.profile;
     if (profile == null) {
-      return const GameScaffold(
+      return GameScaffold(
         screenNum: '7.1',
         screenName: 'ATTACK PREPARATION',
-        body: Center(child: Text('Not authenticated')),
+        body: Center(
+          child: Text(
+            'Not authenticated',
+            style: AppTextStyles.body(color: AppColors.textMuted),
+          ),
+        ),
       );
     }
 
@@ -96,16 +150,21 @@ class _AttackPrepScreenState extends ConsumerState<AttackPrepScreen> {
           return const GameScaffold(
             screenNum: '7.1',
             screenName: 'ATTACK PREPARATION',
-            body: Center(child: CircularProgressIndicator(color: Colors.green)),
+            body: Center(child: CircularProgressIndicator()),
           );
         }
 
         final data = snapshot.data;
         if (snapshot.hasError || data == null || data.$1 == null) {
-          return const GameScaffold(
+          return GameScaffold(
             screenNum: '7.1',
             screenName: 'ATTACK PREPARATION',
-            body: Center(child: Text('Failed to load contract')),
+            body: Center(
+              child: Text(
+                'Failed to load contract',
+                style: AppTextStyles.body(color: AppColors.alert),
+              ),
+            ),
           );
         }
 
@@ -169,101 +228,102 @@ class _AttackPrepScreenState extends ConsumerState<AttackPrepScreen> {
   ) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'OPERATION BRIEF',
-            style: GoogleFonts.cinzel(
-              color: Colors.white54,
-              fontSize: 11,
-              letterSpacing: 3,
-            ),
-          ),
-          const Divider(color: Colors.white12, height: 16),
-          _PrepRow('Target', contract.targetName),
-          _PrepRow('Mission', contract.missionName),
-          _PrepRow('Defense', '${contract.defense} FLOPS'),
-          _PrepRow('Reward', '${contract.eptsReward} EPTS'),
-          if (setup != null) ...[
-            _PrepRow(
-              'Est. Time Budget',
-              '${ResolutionEngine.timeBudgetSeconds(setup)}s',
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              child: Row(
-                children: [
-                  const SizedBox(
-                    width: 140,
-                    child: Text(
-                      'Damage Mult.',
-                      style: TextStyle(color: Colors.white38, fontSize: 13),
-                    ),
-                  ),
-                  Text(
-                    '×${setup.damageMult.toStringAsFixed(1)}',
-                    style: TextStyle(
-                      color: _multColor(setup.damageMult),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'OPERATION BRIEF',
+              style: AppTextStyles.sectionLabel(color: AppColors.textMuted).copyWith(
+                fontSize: 11,
               ),
             ),
-          ],
-          if (underpowered) ...[
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: const Color(0xFF241C0C),
-                border: Border.all(color: const Color(0xFF4A3A1A)),
-                borderRadius: BorderRadius.circular(4),
+            const Divider(height: 16),
+            _PrepRow('Target', contract.targetName),
+            _PrepRow('Mission', contract.missionName),
+            _PrepRow('Defense', '${contract.defense} FLOPS'),
+            _PrepRow('Reward', '${contract.eptsReward} EPTS'),
+            if (setup != null) ...[
+              _PrepRow(
+                'Est. Time Budget',
+                '${ResolutionEngine.timeBudgetSeconds(setup)}s',
               ),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.warning_amber,
-                    color: Colors.amberAccent,
-                    size: 16,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Hardware power low for this target — expect a shorter time budget.',
-                      style: TextStyle(
-                        color: Colors.amber.shade200,
-                        fontSize: 11,
+              _PrepRow(
+                'Damage Mult.',
+                '\u00d7${setup.damageMult.toStringAsFixed(1)}',
+                valueColor: _multColor(setup.damageMult),
+                valueBold: true,
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'ATTACK FORECAST',
+                style: AppTextStyles.sectionLabel(color: AppColors.textMuted).copyWith(
+                  fontSize: 11,
+                ),
+              ),
+              const Divider(height: 16),
+              _PrepRow('Effective Attack', '${ResolutionEngine.effectiveAttack(setup)} FLOPS'),
+              _PrepRow('Target Defense', '${contract.defense} FLOPS'),
+              _PrepRow(
+                'Power Ratio',
+                '${ResolutionEngine.powerRatio(setup).toStringAsFixed(2)}x',
+                valueColor: _verdictColor(ResolutionEngine.powerRatio(setup)),
+                valueBold: true,
+              ),
+              _PrepRow(
+                'Trace Risk',
+                ResolutionEngine.traceRisk(setup).toStringAsFixed(2),
+                valueColor: AppColors.alert,
+              ),
+              _buildVerdictRow(setup),
+            ],
+            if (underpowered) ...[
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.warning.withValues(alpha: 0.08),
+                  border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.warning_amber,
+                      color: AppColors.warning,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Hardware power low for this target — expect a shorter time budget.',
+                        style: AppTextStyles.caption(color: AppColors.warning),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
+              ),
+            ],
+            const SizedBox(height: 20),
+            Text(
+              'SELECT SOFTWARE',
+              style: AppTextStyles.sectionLabel(color: AppColors.textMuted).copyWith(
+                fontSize: 11,
               ),
             ),
-          ],
-          const SizedBox(height: 20),
-          Text(
-            'SELECT SOFTWARE',
-            style: GoogleFonts.cinzel(
-              color: Colors.white54,
-              fontSize: 11,
-              letterSpacing: 3,
-            ),
-          ),
-          const Divider(color: Colors.white12, height: 16),
-          if (ownedSoftware.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12),
-              child: Text(
-                'No software owned. Visit the Store first.',
-                style: TextStyle(color: Colors.white38, fontSize: 13),
-              ),
-            )
-          else
-            Expanded(
-              child: ListView(
+            const Divider(height: 16),
+            if (ownedSoftware.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Text(
+                  'No software owned. Visit the Store first.',
+                  style: AppTextStyles.body(color: AppColors.textMuted),
+                ),
+              )
+            else
+              ListView(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
                 children: ownedSoftware.map((s) {
                   final compatible =
                       s.catalogItem.softTypeId ==
@@ -277,56 +337,64 @@ class _AttackPrepScreenState extends ConsumerState<AttackPrepScreen> {
                     penetration: s.userSoftware.penetrationAbility,
                     compatible: compatible,
                     selected: isSelected,
-                    onTap: compatible
-                        ? () => setState(
-                            () => _selectedUserSoftwareId = s.userSoftware.id,
-                          )
-                        : null,
+                    onTap: () => setState(
+                          () => _selectedUserSoftwareId = s.userSoftware.id,
+                        ),
                   );
                 }).toList(),
               ),
-            ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: setup == null
-                  ? null
-                  : () {
-                      ref.read(attackSessionProvider.notifier).start(setup);
-                      Navigator.pushNamed(
-                        context,
-                        Routes.attackPlay,
-                        arguments: AttackPrepArgs(contractId: contract.id),
-                      );
-                    },
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.redAccent,
-                disabledForegroundColor: Colors.white24,
-                side: BorderSide(
-                  color: setup == null
-                      ? const Color(0xFF222222)
-                      : const Color(0xFF3A1A1A),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: setup == null
+                    ? null
+                    : () {
+                        unawaited(
+                          AudioService.instance.playSfx(AppAudio.sfxButton),
+                        );
+                        ref.read(attackSessionProvider.notifier).start(setup);
+                        Navigator.pushNamed(
+                          context,
+                          Routes.attackPlay,
+                          arguments: AttackPrepArgs(contractId: contract.id),
+                        );
+                      },
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.alert,
+                  disabledForegroundColor: AppColors.iconLow,
+                  side: BorderSide(
+                    color: setup == null
+                        ? AppColors.border
+                        : AppColors.alert,
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-              ),
-              child: Text(
-                'LAUNCH ATTACK',
-                style: GoogleFonts.cinzel(fontSize: 12, letterSpacing: 2),
+                child: Text(
+                  'LAUNCH ATTACK',
+                  style: AppTextStyles.button(color: AppColors.alert).copyWith(fontSize: 12, letterSpacing: 2),
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 12),
-        ],
+            const SizedBox(height: 12),
+          ],
+        ),
       ),
     );
   }
 }
 
 class _PrepRow extends StatelessWidget {
-  const _PrepRow(this.label, this.value);
+  const _PrepRow(
+    this.label,
+    this.value, {
+    this.valueColor,
+    this.valueBold = false,
+  });
   final String label;
   final String value;
+  final Color? valueColor;
+  final bool valueBold;
 
   @override
   Widget build(BuildContext context) {
@@ -334,16 +402,30 @@ class _PrepRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
-          SizedBox(
-            width: 140,
-            child: Text(
-              label,
-              style: const TextStyle(color: Colors.white38, fontSize: 13),
+          // Label: Flexible so it can shrink on very narrow windows instead
+          // of hard-overflowing.
+          Flexible(
+            flex: 0,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minWidth: 100, maxWidth: 140),
+              child: Text(
+                label,
+                style: AppTextStyles.body(color: AppColors.textMuted),
+              ),
             ),
           ),
-          Text(
-            value,
-            style: const TextStyle(color: Colors.white, fontSize: 13),
+          // Value: Expanded so it takes the remaining space and clips with
+          // ellipsis instead of overflowing the Row.
+          Expanded(
+            child: Text(
+              value,
+              softWrap: false,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.dataMono(color: valueColor ?? AppColors.text).copyWith(
+                fontWeight:
+                    valueBold ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
           ),
         ],
       ),
@@ -372,22 +454,22 @@ class _SoftwareRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final labelColor = compatible ? Colors.white : Colors.white24;
+    final labelColor = compatible ? AppColors.text : AppColors.iconLow;
     return InkWell(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
         decoration: BoxDecoration(
-          color: selected ? const Color(0xFF0C160C) : Colors.transparent,
-          border: Border(
-            bottom: BorderSide(color: Colors.white.withValues(alpha: 0.06)),
+          color: selected ? AppColors.surfaceSuccess : Colors.transparent,
+          border: const Border(
+            bottom: BorderSide(color: AppColors.divider),
           ),
         ),
         child: Row(
           children: [
             Icon(
               selected ? Icons.radio_button_checked : Icons.radio_button_off,
-              color: compatible ? Colors.greenAccent : Colors.white12,
+              color: compatible ? AppColors.primary : AppColors.iconLow,
               size: 18,
             ),
             const SizedBox(width: 12),
@@ -395,25 +477,20 @@ class _SoftwareRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(name, style: TextStyle(color: labelColor, fontSize: 13)),
+                  Text(name, style: AppTextStyles.body(color: labelColor)),
                   Text(
                     '$typeName · ATK $attack · PEN $penetration',
-                    style: TextStyle(
-                      color: compatible ? Colors.white38 : Colors.white12,
-                      fontSize: 11,
+                    style: AppTextStyles.caption(
+                      color: compatible ? AppColors.textMuted : AppColors.iconLow,
                     ),
                   ),
                 ],
               ),
             ),
             if (!compatible)
-              const Text(
+              Text(
                 'INCOMPATIBLE',
-                style: TextStyle(
-                  color: Colors.white24,
-                  fontSize: 10,
-                  letterSpacing: 1,
-                ),
+                style: AppTextStyles.caption(color: AppColors.iconLow),
               ),
           ],
         ),

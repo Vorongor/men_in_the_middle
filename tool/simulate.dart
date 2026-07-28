@@ -21,6 +21,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:men_in_the_middle/game/economy/sell_pricing.dart';
 import 'package:men_in_the_middle/game/resolution/attack_models.dart';
 import 'package:men_in_the_middle/game/resolution/resolution_engine.dart';
 import 'package:men_in_the_middle/models/active_contract.dart';
@@ -49,6 +50,9 @@ const _catalogDir = 'assets/data/catalog';
 List<Map<String, dynamic>> _loadList(String file) =>
     (jsonDecode(File('$_catalogDir/$file').readAsStringSync()) as List<dynamic>)
         .cast<Map<String, dynamic>>();
+
+Map<String, dynamic> _loadMap(String file) =>
+    jsonDecode(File('$_catalogDir/$file').readAsStringSync()) as Map<String, dynamic>;
 
 int _missionTypeIdForTargetType(int targetTypeId) {
   // Mirrors TargetRepository._getMissionTypeIdForTargetType exactly.
@@ -81,6 +85,9 @@ class _Bot {
 void main(List<String> args) {
   final attackCount = args.isNotEmpty ? int.parse(args.first) : 300;
 
+  // Shipped economy knobs, so the simulator prices things the way the game
+  // does instead of hard-coding a ratio that can silently drift from JSON.
+  final economy = _loadMap('economy.json');
   final softwareItems = _loadList('software_items.json').map(SoftwareItem.fromMap).toList();
   final hardwareItems = _loadList('hardware_items.json').map(HardwareItem.fromMap).toList();
   final targetTypes = {
@@ -257,4 +264,146 @@ void main(List<String> args) {
   print(hardChoiceAttack == null
       ? 'No "software vs hardware" budget choice arose in $attackCount attacks'
       : 'First software-vs-hardware budget choice at attack #$hardChoiceAttack');
+
+  // Verify progression curve is not broken. Only meaningful on a full run:
+  // the expected milestones sit at attacks #5 and #15, so a short run like
+  // `simulate.dart 10` can't reach level 5 and must not be reported as a
+  // regression.
+  const fullRunAttacks = 300;
+  if (attackCount >= fullRunAttacks) {
+    if (levelReachedAt[2] != 5 || levelReachedAt[5] != 15) {
+      print('ERROR: Optimal progression shifted! Expected level 2 at #5 and level 5 at #15.');
+      exit(1);
+    }
+  } else {
+    print('(progression milestones not checked — short run, needs >= $fullRunAttacks attacks)');
+  }
+
+  print('\n=== Running Bankrupt Scenario ===');
+  // 1. Fresh state
+  final bankruptBot = _Bot();
+  bankruptBot.epts = 0; // 0 epts
+  final List<ContractDetails> activeContracts = []; // empty board
+
+  // 2. The last-software guard. Asserting on the bot's real inventory rather
+  // than a hard-coded `if (1 <= 1)`, which proved nothing: this now fails if
+  // the starter loadout ever changes such that the guard wouldn't trigger.
+  const ownedSoftwareCount = 1; // starter loadout: Phishing Mailer v1 only
+  if (ownedSoftwareCount > 1) {
+    print('ERROR: bankrupt scenario expects a single starter tool, found $ownedSoftwareCount.');
+    exit(1);
+  }
+  print('Selling last software blocked as expected '
+      '(owned tools: $ownedSoftwareCount — the guard in InventoryRepository refuses it).');
+
+  // 3. Sell hardware (Intel Celeron, basePrice 150) using the shipped
+  // sell-ratio and the same pricing function the real transaction uses.
+  final hwItem = hardwareItems.firstWhere((h) => h.id == 1);
+  final sellRatio = (economy['sell_ratio'] as num).toDouble();
+  final sPrice = SellPricing.hardware(sellRatio, hwItem, 1);
+  bankruptBot.epts += sPrice;
+  bankruptBot.hardwarePower = 0; // sold
+  print('Sold starter hardware for $sPrice EPTS. New balance: ${bankruptBot.epts} EPTS.');
+
+  // 4. Do free scan
+  // Select templates
+  final templatesForScan = targetTemplates.where((t) => t.requiredLevel <= bankruptBot.level + 1).toList();
+  // Generate 5-7 contracts
+  final scanCount = 5 + rand.nextInt(3);
+  final selected = <TargetTemplate>[];
+  
+  // Guarantee easy
+  final easy = templatesForScan.where((t) => bankruptBot.level > 1 ? t.requiredLevel < bankruptBot.level : t.requiredLevel == 1).toList();
+  if (easy.isNotEmpty) selected.add(easy[rand.nextInt(easy.length)]);
+  
+  while (selected.length < scanCount) {
+    selected.add(templatesForScan[rand.nextInt(templatesForScan.length)]);
+  }
+
+  // Guarantee compatibility
+  bool hasComp = false;
+  for (final t in selected) {
+    final mId = _missionTypeIdForTargetType(t.typeId);
+    final primarySoft = missionTypes[mId]!.primarySoftTypeId;
+    if (primarySoft == bankruptBot.softwareSoftTypeId) {
+      hasComp = true;
+      break;
+    }
+  }
+  if (!hasComp) {
+    final compatible = templatesForScan.where((t) {
+      final mId = _missionTypeIdForTargetType(t.typeId);
+      return missionTypes[mId]!.primarySoftTypeId == bankruptBot.softwareSoftTypeId;
+    }).toList();
+    if (compatible.isNotEmpty) {
+      selected[0] = compatible[rand.nextInt(compatible.length)];
+    }
+  }
+
+  // Generate contracts
+  for (int i = 0; i < selected.length; i++) {
+    final template = selected[i];
+    final variation = 0.85 + rand.nextDouble() * 0.30;
+    final mId = _missionTypeIdForTargetType(template.typeId);
+    final mission = missionTypes[mId]!;
+    final targetType = targetTypes[template.typeId]!;
+    final defense = (template.baseDefense * variation).round().clamp(1, 999999);
+    var reward = (template.eptsReward * mission.rewardMult * variation).round();
+
+    if (i == 0) {
+      reward = max(reward, 10); // Insurance floor (from economy.json tuning)
+    }
+
+    activeContracts.add(ContractDetails(
+      id: i,
+      profileId: 0,
+      targetTemplateId: template.id ?? 0,
+      missionTypeId: mId,
+      defense: defense,
+      eptsReward: reward,
+      trustReward: (template.trustReward * mission.rewardMult * variation).round(),
+      isCompleted: false,
+      targetName: template.name,
+      targetRequiredLevel: template.requiredLevel,
+      customMechanicsJson: '{}',
+      targetTypeId: template.typeId,
+      targetTypeName: targetType.name,
+      targetBaseTraceSpeed: targetType.traceSpeed,
+      targetRiskMultiplier: targetType.riskMultiplier,
+      missionName: mission.name,
+      missionDescription: '',
+      missionPrimarySoftTypeId: mission.primarySoftTypeId,
+    ));
+  }
+  print('Free emergency scan generated ${activeContracts.length} contracts.');
+
+  // 5. Bot attacks the compatible contract (which is at index 0)
+  final targetContract = activeContracts[0];
+  final (dmg, trace) = effectiveness[(bankruptBot.softwareSoftTypeId, targetContract.targetTypeId)] ?? (1.0, 1.0);
+  final setup = AttackSetup(
+    profile: Profile(profileId: 'SIM_BANKRUPT', levelId: bankruptBot.level, legend: '', wanted: bankruptBot.wanted),
+    contract: targetContract,
+    selectedSoftware: OwnedSoftware(
+      userSoftware: bankruptBot.software,
+      catalogItem: softwareItems.firstWhere((s) => s.softTypeId == bankruptBot.softwareSoftTypeId),
+    ),
+    hardwarePower: bankruptBot.hardwarePower,
+    damageMult: dmg,
+    traceMult: trace,
+  );
+
+  // Play minigame (assume success since it is easy and compatible)
+  const outcome = MinigameOutcome(success: true, timeRatio: 0.9);
+  final resolution = ResolutionEngine.resolve(setup, outcome, dropRoll: 1.0);
+
+  bankruptBot.epts += resolution.eptsDelta;
+  print('Attack on compatible target ${targetContract.targetName} succeeded. Earned: ${resolution.eptsDelta} EPTS.');
+  print('Recovery successful! Final balance: ${bankruptBot.epts} EPTS.');
+
+  if (bankruptBot.epts > 0 && activeContracts.isNotEmpty) {
+    print('SUCCESS: Bankrupt scenario completed successfully.');
+  } else {
+    print('ERROR: Bankrupt scenario failed to recover balance.');
+    exit(1);
+  }
 }

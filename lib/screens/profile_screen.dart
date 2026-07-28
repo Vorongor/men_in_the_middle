@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../repos/attack_repository.dart';
 import '../services/level_service.dart';
 import '../state/player_session.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_text_styles.dart';
 import '../utils/routes.dart';
 import '../widgets/game_scaffold.dart';
 
@@ -33,10 +35,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Color _wantedColor(int wanted) {
-    if (wanted >= 75) return Colors.redAccent;
-    if (wanted >= 50) return Colors.orangeAccent;
-    if (wanted >= 25) return Colors.amberAccent;
-    return Colors.greenAccent;
+    if (wanted >= 75) return AppColors.alert;
+    if (wanted >= 50) return AppColors.warning;
+    if (wanted >= 25) return AppColors.warning;
+    return AppColors.primary;
   }
 
   @override
@@ -45,20 +47,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     return session.when(
       loading: () => const Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: AppColors.bg,
         body: Center(child: CircularProgressIndicator()),
       ),
       error: (e, _) => Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: AppColors.bg,
         body: Center(
-            child: Text('$e', style: const TextStyle(color: Colors.red))),
+            child: Text('$e', style: const TextStyle(color: AppColors.alert))),
       ),
       data: (awp) {
         if (awp == null) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             Navigator.of(context).pushReplacementNamed(Routes.login);
           });
-          return const Scaffold(backgroundColor: Colors.black);
+          return const Scaffold(backgroundColor: AppColors.bg);
         }
 
         final a = awp.account;
@@ -80,7 +82,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 final recent = snapshot.data?.$2 ?? const <AttackHistoryEntry>[];
 
                 return SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.xxl,
+                    vertical: AppSpacing.xl,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -88,49 +93,45 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       _Row('ID', '#${a.id}'),
                       _Row('Handle', a.pseudo),
                       _Row('Rank', '${l.name}  ·  Lv.${l.id}'),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: AppSpacing.sm),
                       _ExpBar(experience: p.experience, progress: progress),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: AppSpacing.sm),
                       _Section('CAPABILITIES'),
                       _Row('Software Power', '${p.softwarePower}'),
                       _Row('Hardware Power', '${p.hardwarePower}'),
                       _Row('EPTS Balance', '${p.eptsBalance}'),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: AppSpacing.sm),
                       _Section('REPUTATION'),
                       _Row('Rating', '${p.rating}'),
                       _WantedRow(wanted: p.wanted, color: _wantedColor(p.wanted)),
                       _Row('Black Trust', '${p.blackTrust} / 100'),
                       _Row('Popularity', '${p.popularity}'),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: AppSpacing.sm),
                       _Section('RECENT OPERATIONS'),
                       if (recent.isEmpty)
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 6),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
                           child: Text(
                             'No operations logged yet.',
-                            style: TextStyle(color: Colors.white24, fontSize: 12),
+                            style: AppTextStyles.body(color: AppColors.textMuted),
                           ),
                         )
                       else
                         ...recent.map((e) => _HistoryRow(entry: e)),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: AppSpacing.sm),
                       _Section('LEGEND'),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: AppSpacing.sm),
                       Text(
                         p.legend,
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 13,
+                        style: AppTextStyles.body(color: AppColors.textHigh).copyWith(
                           fontStyle: FontStyle.italic,
                           height: 1.6,
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.lg),
                       Text(
                         l.description,
-                        style: const TextStyle(
-                          color: Colors.white38,
-                          fontSize: 11,
+                        style: AppTextStyles.caption(color: AppColors.textMuted).copyWith(
                           fontStyle: FontStyle.italic,
                         ),
                       ),
@@ -158,8 +159,8 @@ class _DebugMutationButton extends ConsumerWidget {
       icon: const Icon(Icons.science_outlined, size: 16),
       label: const Text('DEBUG: +100 XP'),
       style: OutlinedButton.styleFrom(
-        foregroundColor: Colors.amber,
-        side: BorderSide(color: Colors.amber.withAlpha(100)),
+        foregroundColor: AppColors.warning,
+        side: BorderSide(color: AppColors.warning.withValues(alpha: 0.4)),
       ),
       onPressed: () async {
         await ref
@@ -179,14 +180,18 @@ class _Section extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: 16, bottom: 6),
+      padding: const EdgeInsets.only(top: AppSpacing.lg, bottom: AppSpacing.xs),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title,
-              style: GoogleFonts.cinzel(
-                  fontSize: 11, color: Colors.white54, letterSpacing: 3)),
-          const Divider(color: Colors.white12, height: 8),
+          Text(
+            title,
+            style: AppTextStyles.sectionLabel(color: AppColors.textMuted).copyWith(
+              fontSize: 11,
+              letterSpacing: 3,
+            ),
+          ),
+          const Divider(height: 8),
         ],
       ),
     );
@@ -206,15 +211,16 @@ class _Row extends StatelessWidget {
         children: [
           SizedBox(
             width: 130,
-            child: Text(label,
-                style: const TextStyle(color: Colors.white38, fontSize: 13)),
+            child: Text(
+              label,
+              style: AppTextStyles.body(color: AppColors.textMuted),
+            ),
           ),
           Expanded(
-            child: Text(value,
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600)),
+            child: Text(
+              value,
+              style: AppTextStyles.dataMono(color: AppColors.text),
+            ),
           ),
         ],
       ),
@@ -233,25 +239,29 @@ class _WantedRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
         children: [
-          const SizedBox(
+          SizedBox(
             width: 130,
-            child: Text('Wanted',
-                style: TextStyle(color: Colors.white38, fontSize: 13)),
+            child: Text(
+              'Wanted',
+              style: AppTextStyles.body(color: AppColors.textMuted),
+            ),
           ),
           Expanded(
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(3),
+              borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
               child: LinearProgressIndicator(
                 value: wanted / 100,
                 minHeight: 8,
-                backgroundColor: const Color(0xFF1A1A1A),
+                backgroundColor: AppColors.border,
                 valueColor: AlwaysStoppedAnimation(color),
               ),
             ),
           ),
           const SizedBox(width: 10),
-          Text('$wanted / 100',
-              style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600)),
+          Text(
+            '$wanted / 100',
+            style: AppTextStyles.dataMono(color: color),
+          ),
         ],
       ),
     );
@@ -272,24 +282,25 @@ class _ExpBar extends StatelessWidget {
       children: [
         Row(
           children: [
-            const Text('Experience',
-                style: TextStyle(color: Colors.white38, fontSize: 13)),
+            Text(
+              'Experience',
+              style: AppTextStyles.body(color: AppColors.textMuted),
+            ),
             const Spacer(),
             Text(
               isMax ? '$experience XP · MAX RANK' : '$experience XP',
-              style: const TextStyle(
-                  color: Colors.white54, fontSize: 11, fontWeight: FontWeight.w600),
+              style: AppTextStyles.caption(color: AppColors.textHigh),
             ),
           ],
         ),
         const SizedBox(height: 4),
         ClipRRect(
-          borderRadius: BorderRadius.circular(3),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
           child: LinearProgressIndicator(
             value: value,
             minHeight: 6,
-            backgroundColor: const Color(0xFF1A1A1A),
-            valueColor: const AlwaysStoppedAnimation(Colors.greenAccent),
+            backgroundColor: AppColors.border,
+            valueColor: const AlwaysStoppedAnimation(AppColors.primary),
           ),
         ),
       ],
@@ -302,9 +313,9 @@ class _HistoryRow extends StatelessWidget {
   final AttackHistoryEntry entry;
 
   Color get _resultColor => switch (entry.result) {
-        'success' => Colors.greenAccent,
-        'hard' => Colors.orangeAccent,
-        _ => Colors.redAccent,
+        'success' => AppColors.primary,
+        'hard' => AppColors.warning,
+        _ => AppColors.alert,
       };
 
   @override
@@ -319,13 +330,13 @@ class _HistoryRow extends StatelessWidget {
           Expanded(
             child: Text(
               '${entry.targetName} · ${entry.missionName}',
-              style: const TextStyle(color: Colors.white70, fontSize: 12),
+              style: AppTextStyles.body(color: AppColors.textHigh),
               overflow: TextOverflow.ellipsis,
             ),
           ),
           Text(
             '$sign${entry.eptsDelta} EPTS',
-            style: TextStyle(color: _resultColor, fontSize: 11, fontWeight: FontWeight.w600),
+            style: AppTextStyles.dataMono(color: _resultColor),
           ),
         ],
       ),

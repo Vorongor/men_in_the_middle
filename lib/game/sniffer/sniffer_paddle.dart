@@ -3,6 +3,8 @@ import 'dart:ui';
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 
+import '../../theme/app_colors.dart';
+
 /// The player-controlled "sniffer" at the bottom of the screen. Wider
 /// paddles (driven by [SnifferConfig.paddleWidthFactor], which scales with
 /// software attack) are easier to land catches with.
@@ -14,7 +16,7 @@ class SnifferPaddle extends RectangleComponent with CollisionCallbacks {
         position: position,
         size: Vector2(width, 18),
         anchor: Anchor.center,
-        paint: Paint()..color = const Color(0xFF39D353),
+        paint: Paint()..color = AppColors.primary,
       );
 
   double _minX;
@@ -24,6 +26,15 @@ class SnifferPaddle extends RectangleComponent with CollisionCallbacks {
   Future<void> onLoad() async {
     await super.onLoad();
     add(RectangleHitbox()..collisionType = CollisionType.active);
+  }
+
+  /// Flame guarantees this is only called after the component is mounted,
+  /// so no race condition with [onLoad]. The game-level [onGameResize] no
+  /// longer needs to touch the paddle at all.
+  @override
+  void onGameResize(Vector2 gameSize) {
+    super.onGameResize(gameSize);
+    setBounds(gameSize.x);
   }
 
   /// Called whenever the playable area width is known/changes so drags and
